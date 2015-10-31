@@ -5,6 +5,12 @@
 
 #define baseIndex=1; //文件第一个数据块的标号
 
+struct FilePosition
+{
+	string fileName;
+	int blockNo;
+};
+
 class BufferPool 
 {
 private:	
