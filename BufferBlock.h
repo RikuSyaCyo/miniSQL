@@ -1,8 +1,9 @@
 #pragma once
-#include <cstring>
+#include <string>
 #include <iostream>
 #include "FilePosition.h"
 using namespace std;
+const int baseIndex = 1;
 
 class BufferBlock
 {
@@ -19,7 +20,9 @@ public:
 	void getData(void* cont, const int size);
 	void setData(const void* cont, FilePosition fPos, int size);
 	void flush();
-	void readFile(FilePosition fPos);
+	void readFile(const FilePosition& fPos);
+	void writeFile();
 	bool isFree();
+	FilePosition getFilePos();
 };
 
