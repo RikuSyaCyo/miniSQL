@@ -19,11 +19,13 @@ void BufferBlock::getData(void* cont, const int size)
 
 void BufferBlock::setData(const void* cont, FilePosition fPos, int size)
 {
+	pinFlag = true;
 	memset(data,0,BLOCKSIZE);
 	memcpy(data,cont,size);
 	filePos = fPos;
 	dirtyFlag = true;
 	freeFlag = false;
+	pinFlag = false;
 }
 
 FilePosition BufferBlock::getFilePos()
@@ -38,6 +40,7 @@ bool BufferBlock::isFree()
 
 void BufferBlock::readFile(const FilePosition& fPos)
 {
+	pinFlag = true;
 	ifstream infile(fPos.fileName,ios::binary);
 	if (!infile)
 	{
@@ -51,10 +54,13 @@ void BufferBlock::readFile(const FilePosition& fPos)
 	freeFlag = false;
 	pinFlag = false;
 	infile.close();
+	pinFlag = false;
 }
 
 void BufferBlock::writeFile()
 {
+	while (pinFlag){
+	}
 	ofstream outfile(filePos.fileName, ios::in|ios::out|ios::binary);
 	if (!outfile)
 	{

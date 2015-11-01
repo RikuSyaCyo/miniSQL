@@ -12,7 +12,7 @@ private:
 	FilePosition  filePos;
 	bool dirtyFlag;
 	bool freeFlag;
-	bool pinFlag;
+	bool pinFlag; 
 	char data[BLOCKSIZE];
 public:
 	BufferBlock();

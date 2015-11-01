@@ -2,8 +2,9 @@
 #include <string>
 
 
-BufferPool::BufferPool() :counter(0)
+BufferPool::BufferPool() 
 {
+	counter = 0;
 	for (int i = 0; i < BLOCKPOOLSIZE; i++)
 	{
 		bufLastVisit[i] = counter;
@@ -129,4 +130,8 @@ void BufferPool::flushBufferPool()
 			bufPool[i].flush();
 			/*cout << "___" << endl;*/
 		}
+}
+
+void BufferPool::deleteFile(string fileName){
+
 }
