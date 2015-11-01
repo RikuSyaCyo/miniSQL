@@ -3,6 +3,7 @@
 
 TableManager::TableManager(FilePosition fPos)
 {
+	filePos = fPos;
 	readTableBlock();
 }
 
@@ -26,7 +27,7 @@ void TableManager::InsertAttribute(string attname, int type, int charLength)
 	Attribute& attri = attr[attriArrayTop++];
 	strcpy(attri.name, attname.c_str());
 	attri.type = type;
-	attri.charLength = charLength;
+	attri.strLength = charLength+1;
 	attri.primary = false;
 	attri.unique = false;
 	attri.hasIndex = false;
@@ -38,6 +39,10 @@ void TableManager::InsertAttribute(string attname, int type)
 	InsertAttribute(attname,type,0);
 }
 
+Attribute TableManager::getAttri(int attrIndex) const
+{
+	return attr[attrIndex];
+}
 
 void TableManager::CreateIndex(string attr)
 {
@@ -58,7 +63,7 @@ TupleManager TableManager::CreateNewTuple()
 	tupleCount++;
 	fPos.fileName = strName() + TupleFilePostfix;
 	fPos.blockNo = baseIndex+tupleCount-1;
-	TupleManager tuple(fPos,NEWTUPLE);
+	TupleManager tuple(strName(),fPos,NEWTUPLE);
 	writeTableBlock();
 	return tuple;
 }
@@ -69,87 +74,6 @@ void TableManager::Delete()
 	buffer.deleteFile(strName()+TupleFilePostfix);
 	delFlag = true;	
 	writeTableBlock();
-}
-
-TupleResults TableManager::selectTuples(string attr, int op, int value)
-{
-	readTableBlock();
-	if (hasIndexOn(attr))
-	{
-		return SelWithIndex(attr,op,value);
-	}
-	else{
-		return SelWithoutIndex(attr,op,value);
-	}
-}
-
-TupleResults TableManager::SelWithIndex(string attr, int op, int value)
-{
-	TupleResults results;
-	switch (op)
-	{
-	case EQUAL:
-		break;
-	case NOEQUAL:
-		break;
-	case LESSTHAN:
-		break;
-	case GREATERTHAN:
-		break;
-	case NOGREATERTHAN:
-		break;
-	case NOLESSTHAN:
-		break;
-	default:
-		break;
-	}
-}
-
-TupleResults TableManager::SelWithoutIndex(string attr, int op, int value)
-{
-	FilePosition fPos;
-	fPos.fileName = strName() + TupleFilePostfix;
-	TupleResults results;
-	int attrNo = getAttrIndex(attr);
-	for (int i = 0; i < tupleCount;i++)
-	{
-		fPos.blockNo = baseIndex + i;
-		TupleManager tuple(fPos);
-		if (tuple.isDelete()==false)
-		{
-			if (tuple.satisfy(attrNo, op, value))
-				results.push_back(fPos);
-			/*switch (op)
-			{
-			case EQUAL:
-				break;
-			case NOEQUAL:
-				break;
-			case LESSTHAN:
-				break;
-			case GREATERTHAN:
-				break;
-			case NOGREATERTHAN:
-				break;
-			case NOLESSTHAN:
-				break;
-			default:
-				break;
-			}*/
-		}		
-	}
-	return results;
-}
-
-TupleResults TableManager::deleteTuples(string attr, int op, int value)
-{
-	TupleResults results=selectTuples(attr,op,value);
-	for (int i = 0; i < results.size(); i++)
-	{
-		TupleManager tuple(results[i]);
-		tuple.Delete();
-	}
-	return results;
 }
 
 bool TableManager::hasIndexOn(string attrName)

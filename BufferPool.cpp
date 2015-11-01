@@ -14,6 +14,7 @@ BufferPool::BufferPool()
 
 BufferPool::~BufferPool()
 {
+	flushBufferPool();
 }
 
 void BufferPool::readFileBlock(void* cont, const string& fileName, const int blockNo, const int size)
