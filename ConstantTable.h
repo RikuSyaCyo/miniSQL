@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
-#include "FilePosition.h"
 #include <vector>
+#include "FilePosition.h"
 using namespace std;
 
 typedef vector<FilePosition> TupleResults;

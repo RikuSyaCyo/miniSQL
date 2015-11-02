@@ -24,5 +24,6 @@ public:
 	void writeFile();
 	bool isFree();
 	FilePosition getFilePos();
+	string diskFile();
 };
 

@@ -1,12 +1,15 @@
 #pragma once
+#include <string>
 #include "FilePosition.h"
 #include "ConstantTable.h"
-#include "CatalogManager.h"
-#include "TableManager.h"
-#include <string>
+#include "BufferPool.h"
+
 using namespace std;
 
+class CatalogManager;
+class TableManager;
 extern CatalogManager catalog;
+extern BufferPool buffer;
 
 class TupleManager
 {
@@ -21,10 +24,11 @@ private:
 
 	void writeTupleBlock();
 	void readTupleBlock();
-	int getOffset(const TableManager& table, int attrIndex);
+	int getOffset(const TableManager& table, int attrIndex); //换一个类实现
 public:
 	TupleManager(string tabName,FilePosition fPos);
 	TupleManager(string tabName,FilePosition fPos,bool Flag);
+	//TupleManager(const TupleManager& tm);
 	~TupleManager();
 	template<typename T>
 	void InsValue(int attrIndex, T value);
@@ -43,7 +47,7 @@ void TupleManager::InsValue(int attrIndex, T value)
 	Attribute& attribute = table.attr[attrIndex];
 	int offset = getOffset(table,attrIndex);
 	if (attribute.type == CHAR)
-		strcpy(data + offset, (string)value.c_str());
+		strcpy(data + offset, &value[0]);
 	else
 		memcpy(data + offset, &T, sizeof(T));
 	writeTupleBlock();
@@ -59,7 +63,7 @@ bool satisfy(int attrIndex, int op, T opValue)
 	Attribute& attribute = table.attr[attrIndex];
 	int offset = getOffset(table, attrIndex);
 	if (attribute.type == CHAR)
-		strcpy(&tupleValue,data + offset);
+		T = data + offset;
 	else
 		memcpy(&tupleValue,data + offset,sizeof(T));
 	switch (op)

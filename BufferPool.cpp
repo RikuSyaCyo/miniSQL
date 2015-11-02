@@ -121,7 +121,6 @@ int BufferPool::findLRUBlock()
 void BufferPool::flushBufferPool()
 {
 	for (int i = 0; i < BLOCKPOOLSIZE;i++)
-		if (!bufPool[i].isFree())
 		{
 			blockMap.erase(bufPool[i].getFilePos().Hash());
 			/*cout << "____" << endl;
@@ -133,6 +132,13 @@ void BufferPool::flushBufferPool()
 		}
 }
 
-void BufferPool::deleteFile(string fileName){
-
+void BufferPool::deleteFile(string fileName)
+{
+	for (int i = 0; i < BLOCKPOOLSIZE; i++)
+	{
+		if (bufPool[i].isFree() == false)
+			if (bufPool[i].diskFile() == fileName)
+				bufPool[i].flush();
+	}
+	remove(fileName.c_str());	
 }

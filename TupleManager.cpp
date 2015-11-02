@@ -1,4 +1,6 @@
 #include "TupleManager.h"
+#include "CatalogManager.h"
+#include "TableManager.h"
 
 TupleManager::TupleManager(string tabName, FilePosition fPos)
 {
@@ -8,12 +10,11 @@ TupleManager::TupleManager(string tabName, FilePosition fPos)
 
 TupleManager::TupleManager(string tabName, FilePosition fPos,bool Flag)
 {
-	strcpy(belongTable,tabName.c_str());
+	strcpy_s(belongTable,tabName.c_str());
 	filePos = fPos;
 	delFlag = false;
 	writeTupleBlock();
 }
-
 
 TupleManager::~TupleManager()
 {
@@ -39,4 +40,14 @@ void TupleManager::Delete()
 	readTupleBlock();
 	delFlag = true;
 	writeTupleBlock();
+}
+
+void TupleManager::readTupleBlock()
+{
+	buffer.readFileBlock(this, filePos.fileName, filePos.blockNo, sizeof(*this));
+}
+
+void TupleManager::writeTupleBlock()
+{
+	buffer.writeFileBlock(this, filePos.fileName, filePos.blockNo, sizeof(*this));
 }

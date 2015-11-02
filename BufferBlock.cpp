@@ -74,6 +74,7 @@ void BufferBlock::writeFile()
 
 void BufferBlock::flush()
 {
+	if (isFree() == true) return;
 	if (dirtyFlag == true)
 	{
 		writeFile();
@@ -85,4 +86,8 @@ void BufferBlock::flush()
 	pinFlag = false;	
 }
 
+string BufferBlock::diskFile()
+{
+	return filePos.fileName;
+}
 

@@ -1,6 +1,8 @@
 #pragma once
 #include "BufferBlock.h"
 #include <map>
+#include "stdio.h"
+using namespace std;
 
 class BufferPool 
 {

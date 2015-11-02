@@ -1,10 +1,10 @@
 #pragma once
 #include <string>
 #include <iostream>
+#include "BufferPool.h"
+#include "FilePosition.h"
 #include "Attribute.h"
 #include "TupleManager.h"
-#include "FilePosition.h"
-#include "BufferPool.h"
 #include "ConstantTable.h"
 using namespace std;
 
@@ -112,6 +112,7 @@ TupleResults TableManager::deleteTuples(string attr, int op, T value)
 		TupleManager tuple(strName(), results[i]);
 		tuple.Delete();
 	}
+	//需要告知b+树
 	writeTableBlock();
 	return results;
 }

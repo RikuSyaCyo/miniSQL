@@ -25,7 +25,7 @@ void TableManager::InsertAttribute(string attname, int type, int charLength)
 {
 	readTableBlock();
 	Attribute& attri = attr[attriArrayTop++];
-	strcpy(attri.name, attname.c_str());
+	strcpy_s(attri.name, attname.c_str());
 	attri.type = type;
 	attri.strLength = charLength+1;
 	attri.primary = false;
@@ -107,7 +107,7 @@ void TableManager::writeTableBlock()
 
 void TableManager::setName(string tabName)
 {
-	strcpy(tableName, tabName.c_str());
+	strcpy_s(tableName, tabName.c_str());
 }
 
 int  TableManager::getAttrIndex(string attrName)

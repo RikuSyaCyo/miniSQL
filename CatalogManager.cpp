@@ -1,21 +1,33 @@
 #include "CatalogManager.h"
 #include <string>
+#include <fstream>
 using namespace std;
 
 CatalogManager::CatalogManager()
 {
 	FilePosition fPos;
 	fPos.fileName = CATALOGFILE;
-	buffer.readFileBlock(&tableNum, CATALOGFILE, baseIndex, sizeof(tableNum));
-	for (int i = 0; i < tableNum; i++)
+	fstream _file;
+	_file.open(fPos.fileName,ios::in);
+	if (!_file) ///文件不存在
 	{
-		fPos.blockNo = baseIndex + i + 1;
-		TableManager table(fPos);
-		if (table.isDelete()== false)
+		tableNum = 0;
+		writeBackTableNum();
+	}
+	else
+	{ 
+		buffer.readFileBlock(&tableNum, CATALOGFILE, baseIndex, sizeof(tableNum));
+		for (int i = 0; i < tableNum; i++)
 		{
-			tableMap[table.strName()] = fPos;
+			fPos.blockNo = baseIndex + i + 1;
+			TableManager table(fPos);
+			if (table.isDelete() == false)
+			{
+				tableMap[table.strName()] = fPos;
+			}
 		}
 	}
+
 }
 
 
@@ -23,6 +35,10 @@ CatalogManager::~CatalogManager()
 {
 }
 
+void CatalogManager::writeBackTableNum()
+{
+	buffer.writeFileBlock(&tableNum, CATALOGFILE, baseIndex, sizeof(tableNum));
+}
 
 TableManager CatalogManager::getTable(string tabName)
 {
@@ -35,11 +51,12 @@ TableManager CatalogManager::createTable(string tabName)
 {
 	FilePosition fPos;
 	tableNum++;
-	buffer.writeFileBlock(&tableNum, CATALOGFILE, baseIndex, sizeof(tableNum));
+	writeBackTableNum();
 	fPos.fileName = CATALOGFILE;
 	fPos.blockNo = baseIndex + tableNum;
 	TableManager table(fPos,tabName,NEWTABLE);
 	tableMap[tabName] = fPos;
+	return table;
 }
 
 bool CatalogManager::deleteTable(string tabName)

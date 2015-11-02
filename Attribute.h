@@ -11,21 +11,6 @@ public:
 	bool primary;
 	bool unique;
 	bool hasIndex;
-	int Bytes() const {//属性所占字节数
-		switch (type)
-		{
-		case INT:
-			return sizeof(int);
-			break;
-		case FLOAT:
-			return sizeof(float);
-			break;
-		case CHAR:
-			return sizeof(char)*strLength;
-			break;
-		default:
-			break;
-		}
-	}
+	int Bytes() const;//属性所占字节数
 };
 
