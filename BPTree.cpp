@@ -37,8 +37,8 @@ void saveBPnode(string filename, Node<int> node, IndexCatelog indexcatelog)
 	node_save.index = node.index;
 	node_save.size = node.size;
 
-	node_save.keys = new int[indexcatelog.size];
-	node_save.ptr = new int[indexcatelog.size + 1];
+	node_save.keys = new int[node.size];
+	node_save.ptr = new int[node.size + 1];
 
 	for (int i = 0; i < node.size; i++)
 	{
@@ -55,8 +55,8 @@ void saveBPnode(string filename, Node<float> node, IndexCatelog indexcatelog)
 	node_save.index = node.index;
 	node_save.size = node.size;
 
-	node_save.keys = new float[indexcatelog.size];
-	node_save.ptr = new int[indexcatelog.size + 1];
+	node_save.keys = new float[node.size];
+	node_save.ptr = new int[node.size + 1];
 
 	for (int i = 0; i < node.size; i++)
 	{
@@ -73,8 +73,8 @@ void saveBPnode(string filename, Node<string> node, IndexCatelog indexcatelog)
 	node_save.index = node.index;
 	node_save.size = node.size;
 
-	node_save.keys = new char[indexcatelog.KeyType*indexcatelog.size];
-	node_save.ptr = new int[indexcatelog.size + 1];
+	node_save.keys = new char[indexcatelog.KeyType*node.size];
+	node_save.ptr = new int[node.size + 1];
 
 	for (int i = 0; i < node.size; i++)
 	{
@@ -312,12 +312,18 @@ vector<int> searchBiggerThan(string filename, IndexCatelog indexcatelog, KeyType
 }
 
 //insert index
-void insertIndex(string filename, int key, int ptr)  //ptr指的是索引所在的行信息存在磁盘的哪一块中
+template<class KeyType>
+int insertIndex(string filename, IndexCatelog indexcatelog, KeyType key, int ptr)  //ptr指的是索引所在的行信息存在磁盘的哪一块中
 {
-	
+	Node<KeyType> emptyNode;
+	emptyNode.empty = 1;
+	int result;
+	result = BP_insert(filename, indexcatelog.root, emptyNode, indexcatelog, key, ptr);
+	return result;
 }
 
-int insert_in_leaf(Node<int> node, int key, int ptr)
+template<class KeyType>
+int insert_in_leaf(Node<KeyType> node, KeyType key, int ptr)
 {
 	int i = 0;
 	for (i = 0; i < node.size; i++)
@@ -327,12 +333,37 @@ int insert_in_leaf(Node<int> node, int key, int ptr)
 	node.size += 1;
 	return i;
 }
-int BP_insert(string filename, int index, Node<int> parent, IndexCatelog indexcatelog)
+
+template<class KeyType>
+int BP_insert(string filename, int index, Node<KeyType> parent, IndexCatelog indexcatelog, KeyType key, int ptr)
 {
 	int flag = 0;
 	int result = -1;
-	Node<int> node = loadBPnode(filename, index, indexcatelog, flag);
+	Node<KeyType> node = loadBPnode(filename, index, indexcatelog, flag);
 	
-	if(node.isLeaf==1)
-		result=insert_in_leaf(node,key, ptr)
+	if (node.isLeaf == 1)
+		result = insert_in_leaf(node, key, ptr);
+	else
+	{
+		int i; //position
+		for (i = 0; i < node.size; i++)
+			if (node.keys[i]>key) break;
+		result = BP_insert(filename, node.ptr[i], node, indexcatelog, key, ptr);
+		if (result == 0)
+		{
+			Node<KeyType> son = loadBPnode(filename, node.ptr[i], indexcatelog, flag);
+			if (node.keys[i] != son.keys[0])
+				node.keys[i] = son.keys[0];
+		}
+	}
+	if (node.size > indexcatelog.size)
+		node.split(parent, filename, indexcatelog);
+	saveBPnode(filename, node, indexcatelog);
+	return result;
+}
+
+//delete index
+int deleteIndex(string filename, int key, IndexCatelog indexcatelog)
+{
+
 }

@@ -18,13 +18,15 @@ public:
 	
 	Node(); 
 	~Node();
-	void split(Node<KeyType> node, Node<KeyType> parent, string filename, IndexCatelog indexcatelog);
+	void split(Node<KeyType> parent, string filename, IndexCatelog indexcatelog);
+	void merge(Node<KeyType> parent, string filename, IndexCatelog indexcatelog);
 };
 /*****************define of class Node****************/
 template<class KeyType>
 inline Node<KeyType>::Node()
 {
-	
+	size = 0;
+	isLeaf = 1;
 }
 
 template<class KeyType>
@@ -33,12 +35,12 @@ inline Node<KeyType>::~Node()
 }
 
 template<class KeyType>
-inline void Node<KeyType>::split(Node<KeyType> node, Node<KeyType> parent, string filename, IndexCatelog indexcatelog)
+inline void Node<KeyType>::split(Node<KeyType> parent, string filename, IndexCatelog indexcatelog)
 {
 	if (parent.empty == 1)
 	{
 		parent.empty == 0;
-		parent.ptr.push_back(node.index);
+		parent.ptr.push_back(index);
 		//parent.keys.push_back(node.keys[node.size / 2 - 1]);
 		parent.ptr.push_back(-1);
 		parent.isLeaf = 0;
@@ -50,19 +52,19 @@ inline void Node<KeyType>::split(Node<KeyType> node, Node<KeyType> parent, strin
 	//set brother node
 	Node<KeyType> bro;
 	int i = 0;
-	bro.size = (node.size + 1) / 2;
+	bro.size = (size + 1) / 2;
 	for (i = 0; i < bro.size; i++)
 	{
-		bro.keys[i] = node.keys[bro.size + i];
-		bro.ptr[i] = node.ptr[bro.size + i];
+		bro.keys[i] = keys[bro.size + i];
+		bro.ptr[i] = ptr[bro.size + i];
 	}
-	bro.ptr[i] = node.ptr[bro.size + i];
-	bro.isLeaf = node.isLeaf;
+	bro.ptr[i] = ptr[bro.size + i];
+	bro.isLeaf = isLeaf;
 	bro.index = indexcatelog.nextIndex();
 
 	//set self
-	node.size -= bro.size;
-	node.ptr[node.size] = bro.index;
+	size -= bro.size;
+	ptr[size] = bro.index;
 
 	//set parent
 	int j = 0;
@@ -74,6 +76,49 @@ inline void Node<KeyType>::split(Node<KeyType> node, Node<KeyType> parent, strin
 	
 	saveBPnode(filename, parent, indexcatelog);
 	saveBPnode(filename, bro, indexcatelog);
+}
+
+//template<class KeyType>
+inline void Node<KeyType>::merge(Node<KeyType> parent, string filename, IndexCatelog indexcatelog)
+{
+	KeyType flag;
+	if (parent.size == 1)
+	{
+		indexcatelog.root = index;
+	}
+	else
+	{
+		int i = 0; //position
+		for (i = 0; i < parent.size; i++)
+			if (parent.keys[i]>keys[0]) break;
+		if (i == parent.size)
+		{
+			Node<KeyType> bro = loadBPnode(filename, parent.ptr[i - 1], indexcatelog, flag);
+			if (bro.size + size < indexcatelog.size)
+			{
+				bro.ptr.pop_back();
+				int k = 0;
+				for ( k = 0; k < size; k++)
+				{
+					bro.keys.push_back(keys[k]);
+					bro.ptr.push_back(ptr[k]);
+				}
+				bro.ptr.push_back(ptr[k]);
+				bro.size += size;
+				parent.keys.erase(keys.begin() + i -1);
+				parent.ptr.erase(ptr.begin() + i);
+				parent.size -= 1;
+			}
+			else
+			{
+				int k = 0;
+				for (k = 0; k < size; k++)
+				{
+					keys.push_back(bro.keys[k]);
+				}
+			}
+		}
+	}
 }
 
 /*********************************statement of BPtree*******************************************/
@@ -91,3 +136,5 @@ template<class KeyType>
 vector<int> searchLessThan(string filename, IndexCatelog indexcatelog, KeyType key, int closure);
 template<class KeyType>
 vector<int> searchBiggerThan(string filename, IndexCatelog indexcatelog, KeyType key, int closure);
+template<class KeyType>
+int insertIndex(string filename, IndexCatelog indexcatelog, KeyType key, int ptr);
