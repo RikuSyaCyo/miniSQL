@@ -97,7 +97,8 @@ inline void Node<KeyType>::merge(Node<KeyType> parent, string filename)
 			if (parent.keys[i]>keys[0]) break;
 		if (i == parent.size)
 		{
-			Node<KeyType> bro = loadBPnode(filename, parent.ptr[i - 1], indexcatelog, flag);
+			Node<KeyType> bro;
+			loadBPnode(filename, bro, parent.ptr[i - 1], indexcatelog, flag);
 			if (bro.size + size < indexcatelog.size)
 			{
 				bro.ptr.pop_back();
@@ -127,7 +128,8 @@ inline void Node<KeyType>::merge(Node<KeyType> parent, string filename)
 		}
 		else
 		{
-			Node<KeyType> bro = loadBPnode(filename, parent.ptr[i + 1], indexcatelog, flag);
+			Node<KeyType> bro;
+			loadBPnode(filename, bro, parent.ptr[i + 1], indexcatelog, flag);
 			if (bro.size + size < indexcatelog.size)
 			{
 				ptr.pop_back();

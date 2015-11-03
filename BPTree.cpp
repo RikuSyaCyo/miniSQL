@@ -95,7 +95,7 @@ void saveBPnode(string filename, Node<string> node)
 }
 
 //BPload
-Node<int> loadBPnode(string FileName, int nodeindex, int flag)
+void loadBPnode(string FileName, Node<int>& node, int nodeindex, int flag)
 {
 	IndexCatelog indexcatelog;
 	indexcatelog.LoadIndexCatelog(FileName);
@@ -105,7 +105,6 @@ Node<int> loadBPnode(string FileName, int nodeindex, int flag)
 	node_read.ptr = new int[indexcatelog.size + 1];
 
 	buffer.readFileBlock(&node_read, FileName, nodeindex, sizeof(node_read));
-	Node<int> node;
 	node.isLeaf = node_read.isLeaf;
 	node.index = node_read.index;
 	node.size = node_read.size;
@@ -116,10 +115,8 @@ Node<int> loadBPnode(string FileName, int nodeindex, int flag)
 	}
 	node.ptr.push_back(node_read.ptr[node.size]);
 	indexcatelog.SaveIndexCatelog(FileName);
-
-	return node;
 }
-Node<float> loadBPnode(string FileName, int nodeindex, float flag)
+void loadBPnode(string FileName, Node<float> &node, int nodeindex, float flag)
 {
 	IndexCatelog indexcatelog;
 	indexcatelog.LoadIndexCatelog(FileName);
@@ -129,7 +126,6 @@ Node<float> loadBPnode(string FileName, int nodeindex, float flag)
 	node_read.ptr = new int[indexcatelog.size + 1];
 
 	buffer.readFileBlock(&node_read, FileName, nodeindex, sizeof(node_read));
-	Node<float> node;
 	node.isLeaf = node_read.isLeaf;
 	node.index = node_read.index;
 	node.size = node_read.size;
@@ -140,10 +136,8 @@ Node<float> loadBPnode(string FileName, int nodeindex, float flag)
 	}
 	node.ptr.push_back(node_read.ptr[node.size]);
 	indexcatelog.SaveIndexCatelog(FileName);
-
-	return node;
 }
-Node<string> loadBPnode(string FileName, int nodeindex, string flag)
+void loadBPnode(string FileName, Node<string> &node, int nodeindex, string flag)
 {
 	IndexCatelog indexcatelog;
 	indexcatelog.LoadIndexCatelog(FileName);
@@ -153,7 +147,6 @@ Node<string> loadBPnode(string FileName, int nodeindex, string flag)
 	node_read.ptr = new int[indexcatelog.size + 1];
 
 	buffer.readFileBlock(&node_read, FileName, nodeindex, sizeof(node_read));
-	Node<string> node;
 	node.isLeaf = node_read.isLeaf;
 	node.index = node_read.index;
 	node.size = node_read.size;
@@ -167,8 +160,6 @@ Node<string> loadBPnode(string FileName, int nodeindex, string flag)
 	}
 	node.ptr.push_back(node_read.ptr[node.size]);
 	indexcatelog.SaveIndexCatelog(FileName);
-
-	return node;
 }
 
 //新建索引
@@ -213,7 +204,9 @@ int searchIndex(string filename, KeyType key)
 	int next_index;
 	KeyType flag;
 
-	Node<KeyType> node = loadBPnode(filename, indexcatelog.root, flag);
+	Node<KeyType> node;
+	loadBPnode(filename, node, indexcatelog.root, flag);
+
 	while (node.isLeaf !=1)
 	{
 		int i = 0;
@@ -226,7 +219,7 @@ int searchIndex(string filename, KeyType key)
 			next_index = node.ptr[node.size];
 		else
 			next_index = node.ptr[i];
-		node = loadBPnode(filename, next_index, flag);
+		loadBPnode(filename, node, next_index, flag);
 	}
 	//搜索到叶节点
 	int i = 0;
@@ -254,11 +247,12 @@ vector<int> searchLessThan(string filename, KeyType key, int closure)
 	int next_index;
 	KeyType flag;
 
-	Node<KeyType> node = loadBPnode(filename, indexcatelog.root, flag);
+	Node<KeyType> node;
+	loadBPnode(filename, node, indexcatelog.root, flag);
 	while (node.isLeaf != 1)
 	{
 		next_index = node.ptr[0];
-		node = loadBPnode(filename, next_index, flag);
+		node = loadBPnode(filename, node, next_index, flag);
 	}
 	vector<int> result;
 	int i = 0;
@@ -281,7 +275,7 @@ vector<int> searchLessThan(string filename, KeyType key, int closure)
 		if (i = node.size)
 		{
 			next_index = node.ptr[node.size];
-			node = loadBPnode(filename, next_index, flag);
+			loadBPnode(filename, node, next_index, flag);
 		}	
 		else
 			break;
@@ -299,7 +293,8 @@ vector<int> searchBiggerThan(string filename, KeyType key, int closure)
 	KeyType flag;
 	vector<int> result;
 
-	Node<KeyType> node = loadBPnode(filename, indexcatelog.root, flag);
+	Node<KeyType> node;
+	loadBPnode(filename, node, indexcatelog.root, flag);
 	while (node.isLeaf != 1)
 	{
 		int i = 0;
@@ -312,7 +307,7 @@ vector<int> searchBiggerThan(string filename, KeyType key, int closure)
 			next_index = node.ptr[node.size];
 		else
 			next_index = node.ptr[i];
-		node = loadBPnode(filename, next_index, flag);
+		loadBPnode(filename, node, next_index, flag);
 	}
 	//搜索到叶节点
 	int i = 0;
@@ -333,7 +328,7 @@ vector<int> searchBiggerThan(string filename, KeyType key, int closure)
 				result.push_back(node.ptr[k]);
 			i = 0;
 			next_index = node.ptr[node.size];
-			node = loadBPnode(filename, next_index, flag);
+			loadBPnode(filename, node, next_index, flag);
 		}
 	}
 	return result;
@@ -373,9 +368,10 @@ int BP_insert(string filename, int index, Node<KeyType> parent, KeyType key, int
 	IndexCatelog indexcatelog;
 	indexcatelog.LoadIndexCatelog(filename);
 
-	int flag = 0;
+	KeyType flag;
 	int result = -1;
-	Node<KeyType> node = loadBPnode(filename, index, flag);
+	Node<KeyType> node;
+	loadBPnode(filename, node, index, flag);
 	
 	if (node.isLeaf == 1)
 		result = insert_in_leaf(node, key, ptr);
@@ -387,7 +383,8 @@ int BP_insert(string filename, int index, Node<KeyType> parent, KeyType key, int
 		result = BP_insert(filename, node.ptr[i], node, key, ptr);
 		if (result == 0)
 		{
-			Node<KeyType> son = loadBPnode(filename, node.ptr[i], flag);
+			Node<KeyType> son;
+			loadBPnode(filename, son, node.ptr[i], flag);
 			if (node.keys[i] != son.keys[0])
 				node.keys[i] = son.keys[0];
 		}
@@ -415,6 +412,7 @@ int deleteIndex(string filename, KeyType key)
 	indexcatelog.SaveIndexCatelog(filename);
 	return result;
 }
+
 template<class KeyType>
 int delete_in_leaf(string filename, KeyType key,Node<KeyType> &node)
 {
@@ -438,7 +436,8 @@ int BP_delete(string filename, int index, Node<KeyType> parent, KeyType key)
 
 	KeyType flag;
 	int result = -1;
-	Node<KeyType> node = loadBPnode(filename, index, flag);
+	Node<KeyType> node;
+	loadBPnode(filename, node, index, flag);
 	if (node.isLeaf == 1)
 		delete_in_leaf(filename, key, node);
 	else
@@ -449,7 +448,8 @@ int BP_delete(string filename, int index, Node<KeyType> parent, KeyType key)
 		result = BP_delete(filename, node.ptr[i], node, key);
 		if (result == 0 && i < node.size)
 		{
-			Node<KeyType> son = loadBPnode(filename, node.ptr[i], flag);
+			Node<KeyType> son;
+			loadBPnode(filename, son, node.ptr[i], flag);
 			if (node.keys[i - 1] != son.keys[0])
 				node.keys[i - 1] = son.keys[0];
 		}
