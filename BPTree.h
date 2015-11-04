@@ -17,8 +17,8 @@ public:
 	
 	Node(); 
 	~Node();
-	void split(Node<KeyType> parent, string filename);
-	void merge(Node<KeyType> parent, string filename);
+	void split(Node<KeyType> parent, string filename, IndexCatelog &indexcatelog);
+	void merge(Node<KeyType> parent, string filename, IndexCatelog &indexcatelog);
 };
 /*****************define of class Node****************/
 template<class KeyType>
@@ -34,10 +34,8 @@ inline Node<KeyType>::~Node()
 }
 
 template<class KeyType>
-inline void Node<KeyType>::split(Node<KeyType> parent, string filename)
+inline void Node<KeyType>::split(Node<KeyType> parent, string filename, IndexCatelog &indexcatelg)
 {
-	IndexCatelog indexcatelog;
-	indexcatelog.LoadIndexCatelog(filename);
 	if (parent.empty == 1)
 	{
 		parent.empty == 0;
@@ -77,14 +75,11 @@ inline void Node<KeyType>::split(Node<KeyType> parent, string filename)
 	
 	saveBPnode(filename, parent, indexcatelog);
 	saveBPnode(filename, bro, indexcatelog);
-	indexcatelog.SaveIndexCatelog(filename);
 }
 
 template<class KeyType>
-inline void Node<KeyType>::merge(Node<KeyType> parent, string filename)
+inline void Node<KeyType>::merge(Node<KeyType> parent, string filename, IndexCatelog &indexcatelog)
 {
-	IndexCatelog indexcatelog;
-	indexcatelog.LoadIndexCatelog(filename);
 	KeyType flag;
 	if (parent.size == 0)
 	{
@@ -159,7 +154,6 @@ inline void Node<KeyType>::merge(Node<KeyType> parent, string filename)
 		}
 		saveBPnode(filename, parent, indexcatelog);
 	}
-	indexcatelog.SaveIndexCatelog(filename);
 }
 
 /*********************************statement of BPtree*******************************************/
@@ -175,3 +169,5 @@ template<class KeyType>
 int insertIndex(string filename, KeyType key, int ptr);
 template<class KeyType>
 int deleteIndex(string filename, KeyType key);
+template<class KeyType>
+void BP_show(string filename, KeyType flag);

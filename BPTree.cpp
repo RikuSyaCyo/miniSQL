@@ -344,7 +344,7 @@ int insertIndex(string filename, KeyType key, int ptr)  //ptrÖ¸µÄÊÇË÷ÒýËùÔÚµÄÐÐÐ
 	Node<KeyType> emptyNode;
 	emptyNode.empty = 1;
 	int result;
-	result = BP_insert(filename, indexcatelog.root, emptyNode, key, ptr);
+	result = BP_insert(filename, indexcatelog.root, emptyNode, key, ptr, indexcatelog);
 
 	indexcatelog.SaveIndexCatelog(filename);
 	return result;
@@ -363,10 +363,8 @@ int insert_in_leaf(Node<KeyType> &node, KeyType key, int ptr)
 }
 
 template<class KeyType>
-int BP_insert(string filename, int index, Node<KeyType> parent, KeyType key, int ptr)
+int BP_insert(string filename, int index, Node<KeyType> parent, KeyType key, int ptr, IndexCatelog &indexcatelog)
 {
-	IndexCatelog indexcatelog;
-	indexcatelog.LoadIndexCatelog(filename);
 
 	KeyType flag;
 	int result = -1;
@@ -390,9 +388,8 @@ int BP_insert(string filename, int index, Node<KeyType> parent, KeyType key, int
 		}
 	}
 	if (node.size > indexcatelog.size)
-		node.split(parent, filename);
+		node.split(parent, filename, indexcatelog);
 	saveBPnode(filename, node);
-	indexcatelog.SaveIndexCatelog(filename);
 
 	return result;
 }
@@ -407,7 +404,7 @@ int deleteIndex(string filename, KeyType key)
 	Node<KeyType> emptyNode;
 	emptyNode.empty = 1;
 	int result;
-	result = BP_delete(filename, indexcatelog.root, emptyNode, key);
+	result = BP_delete(filename, indexcatelog.root, emptyNode, key, indexcatelog);
 
 	indexcatelog.SaveIndexCatelog(filename);
 	return result;
@@ -429,10 +426,8 @@ int delete_in_leaf(string filename, KeyType key,Node<KeyType> &node)
 	return i;
 }
 template<class KeyType>
-int BP_delete(string filename, int index, Node<KeyType> parent, KeyType key)
+int BP_delete(string filename, int index, Node<KeyType> parent, KeyType key, IndexCatelog &indexcatelog)
 {
-	IndexCatelog indexcatelog;
-	indexcatelog.LoadIndexCatelog(filename);
 
 	KeyType flag;
 	int result = -1;
@@ -455,10 +450,43 @@ int BP_delete(string filename, int index, Node<KeyType> parent, KeyType key)
 		}
 	}
 	if (node.size < (indexcatelog.size - 1) / 2)
-		node.merge(parent, filename);
+		node.merge(parent, filename, indexcatelog);
 
 	saveBPnode(filename, node);
-	indexcatelog.SaveIndexCatelog(filename);
 
 	return result;
+}
+template<class KeyType>
+void BP_show(string filename, KeyType flag)
+{
+	IndexCatelog indexcatelog;
+	indexcatelog.LoadIndexCatelog(filename);
+	dfs(filename, 0, indexcatelog.root, indexcatelog);
+}
+
+template<class KeyType>
+void dfs(string filename, int level, int index, IndexCatelog indexcatelog)
+{
+	Node<KeyType> node;
+	KeyType flag;
+
+	loadBPnode(filename, node, index, flag);
+	if (node.isLeaf == 1)
+		cout << "leaf:" << level << endl;
+	else
+		cout << "level:" << level << endl;
+	cout << node.index << endl;
+	cout << node.size << "isLeaf?" << node.isLeaf << endl;
+	for (int i = 0; i < node.size; i++)
+	{
+		cout << node.ptr[i] <<"/"<< node.keys[i] << "/";
+	}
+	cout << node.ptr[node.size] << endl;
+	if (node.isLeaf == 1)
+		return;
+	else
+	{
+		for (int i = 0; i < node.size + 1;i++)
+			dfs(filename, level + 1, node.ptr[i], indexcatelog);
+	}
 }
