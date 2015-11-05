@@ -19,6 +19,21 @@ TableManager::TableManager(FilePosition fPos, string tabName, bool flag)
 
 TableManager::~TableManager()
 {
+	//cout << "~tablemanager" << endl;
+}
+
+void TableManager::readTableBlock()
+{
+	//cout << sizeof(*this) << endl;
+	//TableManager table;
+	//buffer.readFileBlock(&table, filePos.filePath(), filePos.blockNo, sizeof(table));
+	//*this = table;
+	buffer.readFileBlock(this, filePos.filePath(), filePos.blockNo, sizeof(*this));
+}
+
+void TableManager::writeTableBlock()
+{
+	buffer.writeFileBlock(this, filePos.filePath(), filePos.blockNo, sizeof(*this));
 }
 
 void TableManager::InsertAttribute(string attname, int type, int charLength)
@@ -39,9 +54,35 @@ void TableManager::InsertAttribute(string attname, int type)
 	InsertAttribute(attname,type,0);
 }
 
-Attribute TableManager::getAttri(int attrIndex) const
+Attribute TableManager::getAttri(int attrIndex) 
 {
+	readTableBlock();
 	return attr[attrIndex];
+}
+
+int TableManager::getAttrOffset(int attrIndex)
+{
+	readTableBlock();
+	int offset = 0;
+	for (int i = 0; i <= attrIndex; i++)
+		offset += attr[i].Bytes();
+	return offset;
+}
+
+int TableManager::getAttriCount()
+{
+	readTableBlock();
+	return attriArrayTop;
+}
+
+int  TableManager::getAttrIndex(string attrName)
+{
+	for (int i = 0; i < attriArrayTop; i++)
+	{
+		string str = attr[i].name;
+		if (str == attrName)
+			return i;
+	}
 }
 
 void TableManager::CreateIndex(string attr)
@@ -61,7 +102,7 @@ TupleManager TableManager::CreateNewTuple()
 	readTableBlock();
 	FilePosition fPos;
 	tupleCount++;
-	fPos.fileName = strName() + TupleFilePostfix;
+	fPos.setFilePath(strName() + TupleFilePostfix);
 	fPos.blockNo = baseIndex+tupleCount-1;
 	TupleManager tuple(strName(),fPos,NEWTUPLE);
 	writeTableBlock();
@@ -78,7 +119,6 @@ void TableManager::Delete()
 
 bool TableManager::hasIndexOn(string attrName)
 {
-	readTableBlock();
 	int attrIndex = getAttrIndex(attrName);
 	return attr[attrIndex].hasIndex;
 }
@@ -95,28 +135,36 @@ bool TableManager::isDelete()
 	return delFlag;
 }
 
-void TableManager::readTableBlock()
-{
-	buffer.readFileBlock(this,filePos.fileName,filePos.blockNo,sizeof(*this));
-}
-
-void TableManager::writeTableBlock()
-{
-	buffer.writeFileBlock(this,filePos.fileName,filePos.blockNo,sizeof(*this));
-}
-
 void TableManager::setName(string tabName)
 {
 	strcpy_s(tableName, tabName.c_str());
 }
 
-int  TableManager::getAttrIndex(string attrName)
+void TableManager::disTableInf()
 {
+	readTableBlock();
+	cout << "Table:" << endl;
+	cout << strName() << endl;
 	for (int i = 0; i < attriArrayTop; i++)
 	{
-		string str = attr[i].name;
-		if (str == attrName)
-			return i;
+		string str=attr[i].name;
+		cout << str << '\t';
 	}
+	cout << endl;
 }
 
+void TableManager::disAllTuples()
+{
+	readTableBlock();
+	FilePosition fPos;
+	fPos.setFilePath(strName() + TupleFilePostfix);
+	for (int i = 0; i < tupleCount; i++)
+	{
+		fPos.blockNo = baseIndex + i;
+		TupleManager tuple(strName(), fPos);
+		if (tuple.isDelete() == false)
+		{
+			tuple.display();
+		}
+	}
+}

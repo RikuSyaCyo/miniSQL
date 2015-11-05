@@ -21,12 +21,14 @@ TupleManager::~TupleManager()
 
 }
 
-int TupleManager::getOffset(const TableManager& table, int attrIndex)
+void TupleManager::readTupleBlock()
 {
-	int Bytes = 0;
-	for (int i = 0; i < attrIndex; i++)
-		Bytes += table.getAttri(i).Bytes();
-	return Bytes;
+	buffer.readFileBlock(this, filePos.fileName, filePos.blockNo, sizeof(*this));
+}
+
+void TupleManager::writeTupleBlock()
+{
+	buffer.writeFileBlock(this, filePos.fileName, filePos.blockNo, sizeof(*this));
 }
 
 bool TupleManager::isDelete()
@@ -42,12 +44,51 @@ void TupleManager::Delete()
 	writeTupleBlock();
 }
 
-void TupleManager::readTupleBlock()
+void TupleManager::display()
 {
-	buffer.readFileBlock(this, filePos.fileName, filePos.blockNo, sizeof(*this));
+	readTupleBlock();
+	string tabName = belongTable;
+	TableManager table = catalog.getTable(tabName);
+	int attriCount = table.getAttriCount();
+	for (int i = 0; i < attriCount; i++)
+	{
+		const Attribute& attri = table.getAttri(i);
+		switch (attri.type)
+		{
+		case INT:
+			cout << getValue(i, 1);
+			break;
+		case CHAR:
+			cout << getValue(i, "1");
+			break;
+		case FLOAT:
+			cout << getValue(i, 1.1);
+			break;
+		default:
+			break;
+		}
+		cout << '\t';
+	}		
+	cout << endl;
 }
 
-void TupleManager::writeTupleBlock()
+void TupleManager::InsValue(int attrIndex, string value)
 {
-	buffer.writeFileBlock(this, filePos.fileName, filePos.blockNo, sizeof(*this));
+	readTupleBlock();
+	string tabName = belongTable;
+	TableManager table = catalog.getTable(tabName);
+	int offset = table.getAttrOffset(attrIndex - 1);
+	char* ptr = data + offset;
+	strcpy_s((char*)ptr,value.length()+1, value.c_str());
+	writeTupleBlock();
+}
+
+string TupleManager::getValue(int attrIndex, const string& label)
+{
+	string tabName = belongTable;
+	TableManager table = catalog.getTable(tabName);
+	int offset = table.getAttrOffset(attrIndex - 1);
+	void* ptr = data + offset;
+	string tupleValue = (char*)ptr;
+	return tupleValue;
 }

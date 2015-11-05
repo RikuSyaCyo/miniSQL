@@ -1,18 +1,21 @@
 #pragma once
 #include "BufferBlock.h"
 #include <map>
+#include <vector>
 #include "stdio.h"
 using namespace std;
 
 class BufferPool 
 {
 private:	
-	static const int BLOCKPOOLSIZE = 3;
-	static const int NO_FREE_BLOCK = -1;
-	int counter;
-	BufferBlock bufPool[BLOCKPOOLSIZE];
-	long bufLastVisit[BLOCKPOOLSIZE];
+	static const int BLOCKPOOLSIZE = 3; // block pool size 缓冲区块数
+	static const int NO_FREE_BLOCK = -1; 
+	//int counter; //时间戳
+	BufferBlock bufPool[BLOCKPOOLSIZE]; //缓冲池
+	//long bufLastVisit[BLOCKPOOLSIZE]; //缓冲块最后访问的时间戳
 	map<string, int> blockMap;//记录文件block是否在缓冲区中，文件block(FilePosition)对应的缓冲区block(int)
+	vector<int> freeBlockVec;//记录所有free block的index
+	vector<int> visitRecordVec;//缓冲块使用记录<队列>
 	int newBufBlock(); //申请一个缓冲块
 	int findFreeBlock();  //修改实现方式，使用free_vector
 	int findLRUBlock(); //修改实现方式，使用hash

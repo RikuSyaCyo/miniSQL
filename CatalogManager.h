@@ -15,14 +15,14 @@ class CatalogManager
 private:
 	const string CATALOGFILE = "catalogFile";
 	int tableNum; //总数量，包括已经删除的。没有为0
-	map<string, FilePosition> tableMap;
+	map<string, FilePosition> tableMap; //每一个table所在的文件位置
 	void writeBackTableNum();
 public:
 	CatalogManager();
 	~CatalogManager();
-	TableManager getTable(string tabName);
-	TableManager createTable(string tabName);
-	bool deleteTable(string tabName);
-	bool findTable(string tabName);
+	TableManager getTable(string tabName);//查找返回一个table
+	TableManager createTable(string tabName);//新建一个table
+	bool deleteTable(string tabName);//删除一个table
+	bool findTable(string tabName);//判断table是否存在
 };
 

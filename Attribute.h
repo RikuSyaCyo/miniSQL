@@ -4,13 +4,12 @@
 class Attribute
 {
 public:
-	const static int ATTRIBUTENAMELENGTH = 128;
-	char name[ATTRIBUTENAMELENGTH];
-	int type;
+	char name[ATTRIBUTENAMELENGTH];//attribute name
+	int type;//int or float or string
 	int strLength; //int,float的strlength为0，>0为char。 若char(n)，则strLength=n+1
-	bool primary;
-	bool unique;
-	bool hasIndex;
+	bool primary;//是否为primary key
+	bool unique;//是否unique
+	bool hasIndex;//属性上是否有index
 	int Bytes() const;//属性所占字节数
 };
 

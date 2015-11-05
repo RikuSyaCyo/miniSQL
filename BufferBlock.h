@@ -2,8 +2,8 @@
 #include <string>
 #include <iostream>
 #include "FilePosition.h"
+#include "ConstantTable.h"
 using namespace std;
-const int baseIndex = 1;
 
 class BufferBlock
 {

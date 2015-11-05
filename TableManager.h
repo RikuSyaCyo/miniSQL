@@ -13,38 +13,43 @@ extern BufferPool buffer;
 class TableManager
 {
 private:
-	char  tableName[TABLENAMELENGTH];
-	FilePosition filePos;
-	int attriArrayTop; //没有为0
-	Attribute attr[ATTRIMAXNUM];
-	bool delFlag;
+	char  tableName[TABLENAMELENGTH]; //table name
+	FilePosition filePos; //存table的文件和block
+	int attriArrayTop; //属性队列尾指针。没有为0
+	Attribute attr[ATTRIMAXNUM];//属性
+	bool delFlag;//删除flag
 	int tupleCount;//tuple数量，没有为0
-	void readTableBlock();
-	void writeTableBlock();
-	void setName(string tabName);
-	bool hasIndexOn(string attr);
+	void readTableBlock();//读取table信息
+	void writeTableBlock();//存储table信息
+	void setName(string tabName);//设置table name
+	bool hasIndexOn(string attr);//属性attr上是否有Index
 	template <typename T>
-	TupleResults SelWithIndex(string attr, int op, T value);
+	TupleResults SelWithIndex(string attr, int op, T value);//通过Index查找
 	template <typename T>
-	TupleResults SelWithoutIndex(string attr, int op, T value);
-	int getAttrIndex(string attr);
+	TupleResults SelWithoutIndex(string attr, int op, T value);//不通过index查找
+	int getAttrIndex(string attr);//返回属性attr在属性数组中的下标
 public:
+	//TableManager(){}
 	TableManager(FilePosition fPos);
 	TableManager(FilePosition fPos, string tabName, bool flag);
 	~TableManager();
-	void InsertAttribute(string attname, int type);
-	void InsertAttribute(string attname, int type, int charLength);
-	Attribute getAttri(int attrIndex) const;
-	void CreateIndex(string attr);
-	void DeleteIndex(string attr);
-	TupleManager CreateNewTuple();
-	void Delete();
+	void InsertAttribute(string attname, int type); //增加属性（int或float）
+	void InsertAttribute(string attname, int type, int charLength);//增加属性（char）
+	Attribute getAttri(int attrIndex);//返回下标为attrIndex的属性
+	int getAttrOffset(int attrIndex);//返回下标0~attrIndex的属性的存储总字节数
+	int getAttriCount();//返回当前属性个数
+	void CreateIndex(string attr);//创建Index
+	void DeleteIndex(string attr);//删除index
+	TupleManager CreateNewTuple();//新增一个tuple
+	void Delete();//删除table
 	template <typename T>
-	TupleResults selectTuples(string attr, int op, T value);
+	TupleResults selectTuples(string attr, int op, T value);//查询tuple
 	template <typename T>
-	TupleResults deleteTuples(string attr, int op, T value);
-	string strName();
-	bool isDelete();
+	TupleResults deleteTuples(string attr, int op, T value);//删除tuple操作
+	string strName();//返回table name
+	bool isDelete();//table是否已删除
+	void disTableInf();//显示table信息
+	void disAllTuples();//显示所有tuple
 };
 
 template <typename T>
@@ -87,7 +92,7 @@ template <typename T>
 TupleResults TableManager::SelWithoutIndex(string attr, int op, T value)
 {
 	FilePosition fPos;
-	fPos.fileName = strName() + TupleFilePostfix;
+	fPos.setFilePath(strName() + TupleFilePostfix);
 	TupleResults results;
 	int attrIndex = getAttrIndex(attr);
 	for (int i = 0; i < tupleCount; i++)

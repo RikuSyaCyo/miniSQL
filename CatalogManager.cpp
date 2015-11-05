@@ -6,9 +6,9 @@ using namespace std;
 CatalogManager::CatalogManager()
 {
 	FilePosition fPos;
-	fPos.fileName = CATALOGFILE;
+	fPos.setFilePath(CATALOGFILE);
 	fstream _file;
-	_file.open(fPos.fileName,ios::in);
+	_file.open(fPos.filePath(),ios::in);
 	if (!_file) ///文件不存在
 	{
 		tableNum = 0;
@@ -20,6 +20,7 @@ CatalogManager::CatalogManager()
 		for (int i = 0; i < tableNum; i++)
 		{
 			fPos.blockNo = baseIndex + i + 1;
+			//cout << sizeof(TableManager) << endl;
 			TableManager table(fPos);
 			if (table.isDelete() == false)
 			{
@@ -30,9 +31,9 @@ CatalogManager::CatalogManager()
 
 }
 
-
 CatalogManager::~CatalogManager()
 {
+	//cout << "~catalogManager" << endl;
 }
 
 void CatalogManager::writeBackTableNum()
@@ -52,9 +53,10 @@ TableManager CatalogManager::createTable(string tabName)
 	FilePosition fPos;
 	tableNum++;
 	writeBackTableNum();
-	fPos.fileName = CATALOGFILE;
+	fPos.setFilePath(CATALOGFILE);
 	fPos.blockNo = baseIndex + tableNum;
 	TableManager table(fPos,tabName,NEWTABLE);
+	//TableManager table;
 	tableMap[tabName] = fPos;
 	return table;
 }

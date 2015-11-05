@@ -1,11 +1,13 @@
 #include "FilePosition.h"
 
 
-FilePosition::FilePosition() :fileName("")
+FilePosition::FilePosition()
 {
+	//cout << "filePosition" << endl;
 }
 
 
 FilePosition::~FilePosition()
 {
+	//cout << "~filePosition" << endl;
 }

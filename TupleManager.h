@@ -24,19 +24,25 @@ private:
 
 	void writeTupleBlock();
 	void readTupleBlock();
-	int getOffset(const TableManager& table, int attrIndex); //换一个类实现
+	string getValue(int attrIndex,const string& label);
+	template<typename T>
+	T getValue(int attrIndex,const T& label);
+
 public:
 	TupleManager(string tabName,FilePosition fPos);
 	TupleManager(string tabName,FilePosition fPos,bool Flag);
-	//TupleManager(const TupleManager& tm);
 	~TupleManager();
+	void InsValue(int attrIndex, string value);
 	template<typename T>
 	void InsValue(int attrIndex, T value);
 	template <typename T>
 	bool satisfy(int attrNo, int op, T opValue);
 	bool isDelete();
 	void Delete();
+	void display();
 };
+
+
 
 template<typename T>
 void TupleManager::InsValue(int attrIndex, T value)
@@ -44,28 +50,29 @@ void TupleManager::InsValue(int attrIndex, T value)
 	readTupleBlock();
 	string tabName = belongTable;
 	TableManager table=catalog.getTable(tabName);
-	Attribute& attribute = table.attr[attrIndex];
-	int offset = getOffset(table,attrIndex);
-	if (attribute.type == CHAR)
-		strcpy(data + offset, &value[0]);
-	else
-		memcpy(data + offset, &T, sizeof(T));
+	int offset = table.getAttrOffset(attrIndex - 1);
+	void* ptr = data + offset;
+	*((T*)ptr) = value;
 	writeTupleBlock();
+}
+
+template<typename T>
+T TupleManager::getValue(int attrIndex, const T& label)
+{
+	cout << "getValue" << endl;
+	string tabName = belongTable;
+	TableManager table = catalog.getTable(tabName);
+	int offset = table.getAttrOffset(attrIndex - 1);
+	void* ptr = data + offset;
+	T tupleValue = *((T*)ptr);
+	return tupleValue;
 }
 
 template <typename T>
 bool satisfy(int attrIndex, int op, T opValue)
 {
-	T tupleValue
 	readTupleBlock();
-	string tabName = belongTable;
-	TableManager table = catalog.getTable(tabName);
-	Attribute& attribute = table.attr[attrIndex];
-	int offset = getOffset(table, attrIndex);
-	if (attribute.type == CHAR)
-		T = data + offset;
-	else
-		memcpy(&tupleValue,data + offset,sizeof(T));
+	T tupleValue = getValue(attrIndex,opValue);
 	switch (op)
 	{
 	case EQUAL:
@@ -90,5 +97,5 @@ bool satisfy(int attrIndex, int op, T opValue)
 		return false;
 		break;
 	}
-	writeTupleBlock();
+	//writeTupleBlock();
 }

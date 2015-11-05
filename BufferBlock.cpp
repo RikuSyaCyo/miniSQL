@@ -10,6 +10,7 @@ BufferBlock::BufferBlock() :dirtyFlag(false), freeFlag(true), pinFlag(false)
 
 BufferBlock::~BufferBlock()
 {
+	//cout << "~BufferBlock" << endl;
 }
 
 void BufferBlock::getData(void* cont, const int size)
@@ -41,7 +42,7 @@ bool BufferBlock::isFree()
 void BufferBlock::readFile(const FilePosition& fPos)
 {
 	pinFlag = true;
-	ifstream infile(fPos.fileName,ios::binary);
+	ifstream infile(fPos.filePath(),ios::binary);
 	if (!infile)
 	{
 		cerr << "open error!" << endl;
@@ -52,7 +53,6 @@ void BufferBlock::readFile(const FilePosition& fPos)
 	filePos = fPos;
 	dirtyFlag = false;
 	freeFlag = false;
-	pinFlag = false;
 	infile.close();
 	pinFlag = false;
 }
@@ -61,10 +61,10 @@ void BufferBlock::writeFile()
 {
 	while (pinFlag){
 	}
-	ofstream outfile(filePos.fileName, ios::in|ios::out|ios::binary);
+	ofstream outfile(filePos.filePath(), ios::in|ios::out|ios::binary);
 	if (!outfile)
 	{
-		outfile.open(filePos.fileName);
+		outfile.open(filePos.filePath());
 	}
 	outfile.seekp(BLOCKSIZE*(filePos.blockNo - baseIndex), ios::beg);
 	outfile.write(data, BLOCKSIZE);
@@ -80,7 +80,7 @@ void BufferBlock::flush()
 		writeFile();
 		//cout << "abc" << endl;
 	}
-	filePos.fileName = "";
+	filePos.setFilePath("");
 	dirtyFlag = false;
 	freeFlag = true;
 	pinFlag = false;	
@@ -88,6 +88,6 @@ void BufferBlock::flush()
 
 string BufferBlock::diskFile()
 {
-	return filePos.fileName;
+	return filePos.filePath();
 }
 
