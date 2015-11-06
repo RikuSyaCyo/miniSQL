@@ -36,20 +36,35 @@ void TableManager::writeTableBlock()
 	buffer.writeFileBlock(this, filePos.filePath(), filePos.blockNo, sizeof(*this));
 }
 
-void TableManager::InsertAttribute(string attname, int type, int charLength)
+void TableManager::InsertAttribute(string attname, int type, int charLength, int uniqueInf)
 {
 	readTableBlock();
 	Attribute& attri = attr[attriArrayTop++];
 	strcpy_s(attri.name, attname.c_str());
 	attri.type = type;
 	attri.strLength = charLength+1;
-	attri.primary = false;
-	attri.unique = false;
 	attri.hasIndex = false;
+	switch (uniqueInf)
+	{
+	case 0:
+		attri.primary = false;
+		attri.unique = true;
+		break;
+	case 1:
+		attri.primary = false;
+		attri.unique = false;
+		break;
+	case 2:
+		attri.primary = true;
+		attri.unique = true;
+		break;
+	default:
+		break;
+	}
 	writeTableBlock();
 }
 
-void TableManager::InsertAttribute(string attname, int type)
+void TableManager::InsertAttribute(string attname, int type,int uniqueInf)
 {
 	InsertAttribute(attname,type,0);
 }
@@ -156,6 +171,7 @@ void TableManager::disTableInf()
 void TableManager::disAllTuples()
 {
 	readTableBlock();
+	//cout << "disAllTuples " << tupleCount << endl;
 	FilePosition fPos;
 	fPos.setFilePath(strName() + TupleFilePostfix);
 	for (int i = 0; i < tupleCount; i++)
@@ -167,4 +183,32 @@ void TableManager::disAllTuples()
 			tuple.display();
 		}
 	}
+}
+
+int TableManager::attributeCount()
+{
+	return attriArrayTop;
+}
+
+int TableManager::getAttributeType(int attriIndex)
+{
+	return attr[attriIndex].type;
+}
+
+string TableManager::getAttriName(int attriIndex)
+{
+	string str = attr[attriIndex].name;
+	return str;
+}
+
+TupleResults TableManager::getAllTuples()
+{
+	TupleResults results(strName());
+	for (int i = 0; i < tupleCount; i++)
+	{
+		TupleManager tuple(strName(),i);
+		if (tuple.isDelete() == false)
+			results.insert(i);
+	}
+	return results;
 }

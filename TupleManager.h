@@ -15,28 +15,45 @@ class TupleManager
 {
 private:
 	static const int TUPLEMAXSIZE = 3072;
+
 	char belongTable[TABLENAMELENGTH];
-	FilePosition filePos;
 	char data[TUPLEMAXSIZE];
-//	int attriBytesTotal[ATTRIMAXNUM]; //前i个属性累计占字节数
-//	int dataSize; //空的时候为0
+	int attriNum;//有值的属性个数，实际是 max(有值属性标号)+1
 	bool delFlag;
 
 	void writeTupleBlock();
 	void readTupleBlock();
-	string getValue(int attrIndex,const string& label);
-	template<typename T>
-	T getValue(int attrIndex,const T& label);
+	string getValue(int attrIndex,string label);
+	int getValue(int attrIndex, int label);
+	float getValue(int attrIndex, float label);
+	//template<typename T>
+	//T getValue(int attrIndex, T label);
+	bool satisfy(int attrIndex, int op, double opValue);
+	bool satisfy(int attrIndex, int op, const char* opValue);
+	bool satisfy(int attrIndex, int op, float opValue);
+	bool satisfy(int attrIndex, int op, int opValue);
+	bool satisfy(int attrIndex, int op, string opValue);
+	int getOffset(int attrIndex);
 
 public:
+	friend class TableManager;
+
+	FilePosition filePos;
+	TupleManager(string tabName, int tupleIndex);
 	TupleManager(string tabName,FilePosition fPos);
 	TupleManager(string tabName,FilePosition fPos,bool Flag);
 	~TupleManager();
 	void InsValue(int attrIndex, string value);
-	template<typename T>
-	void InsValue(int attrIndex, T value);
-	template <typename T>
-	bool satisfy(int attrNo, int op, T opValue);
+	void InsValue(int attrIndex,const char* value);
+	void InsValue(int attrIndex, int value);
+	void InsValue(int attrIndex, float value);
+	void InsValue(int attrIndex, double value);
+
+	/*template<typename T>
+	void InsValue(int attrIndex, T value);*/
+	//inline bool satisfy(int attrIndex, int op,const char* opValue);
+	//template <typename T>
+	//bool satisfy(int attrIndex, int op, T opValue);
 	bool isDelete();
 	void Delete();
 	void display();
@@ -44,58 +61,58 @@ public:
 
 
 
-template<typename T>
-void TupleManager::InsValue(int attrIndex, T value)
-{
-	readTupleBlock();
-	string tabName = belongTable;
-	TableManager table=catalog.getTable(tabName);
-	int offset = table.getAttrOffset(attrIndex - 1);
-	void* ptr = data + offset;
-	*((T*)ptr) = value;
-	writeTupleBlock();
-}
+//template<typename T>
+//void TupleManager::InsValue(int attrIndex, T value)
+//{
+//	readTupleBlock();
+//	int offset = getOffset(attrIndex - 1);
+//	void* ptr = data + offset;
+//	*((T*)ptr) = value;
+//	if (attrIndex + 1>attriNum)
+//		attriNum = attrIndex + 1;
+//	writeTupleBlock();
+//}
 
-template<typename T>
-T TupleManager::getValue(int attrIndex, const T& label)
-{
-	cout << "getValue" << endl;
-	string tabName = belongTable;
-	TableManager table = catalog.getTable(tabName);
-	int offset = table.getAttrOffset(attrIndex - 1);
-	void* ptr = data + offset;
-	T tupleValue = *((T*)ptr);
-	return tupleValue;
-}
+//template<typename T>
+//T TupleManager::getValue(int attrIndex, T label)
+//{
+//	int offset = getOffset(attrIndex - 1);
+//	cout << endl <<"offset: "<< offset << endl;
+//	void* ptr = data + offset;
+//	T tupleValue = *((T*)ptr);
+//	return tupleValue;
+//}
 
-template <typename T>
-bool satisfy(int attrIndex, int op, T opValue)
-{
-	readTupleBlock();
-	T tupleValue = getValue(attrIndex,opValue);
-	switch (op)
-	{
-	case EQUAL:
-		return tupleValue == opValue;
-		break;
-	case NOEQUAL:
-		return tupleValue != opValue;
-		break;
-	case LESSTHAN:
-		return tupleValue < opValue;
-		break;
-	case GREATERTHAN:
-		return tupleValue > opValue;
-		break;
-	case NOGREATERTHAN:
-		return tupleValue <= opValue;
-		break;
-	case NOLESSTHAN:
-		return tupleValue >= opValue;
-		break;
-	default:
-		return false;
-		break;
-	}
-	//writeTupleBlock();
-}
+//template <typename T>
+//bool satisfy(int attrIndex, int op, T opValue)
+//{
+//	readTupleBlock();
+//	T tupleValue = getValue(attrIndex,opValue);
+//	switch (op)
+//	{
+//	case EQUAL:
+//		return tupleValue == opValue;
+//		break;
+//	case NOEQUAL:
+//		return tupleValue != opValue;
+//		break;
+//	case LESSTHAN:
+//		return tupleValue < opValue;
+//		break;
+//	case GREATERTHAN:
+//		return tupleValue > opValue;
+//		break;
+//	case NOGREATERTHAN:
+//		return tupleValue <= opValue;
+//		break;
+//	case NOLESSTHAN:
+//		return tupleValue >= opValue;
+//		break;
+//	default:
+//		return false;
+//		break;
+//	}
+//	return true;
+//	writeTupleBlock();
+//}
+//

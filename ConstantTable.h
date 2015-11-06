@@ -4,7 +4,7 @@
 #include "FilePosition.h"
 using namespace std;
 
-typedef vector<FilePosition> TupleResults;
+static const float EPSINON = 0.00001;
 
 static const int ATTRIMAXNUM = 32; // max number of attributes
 static const bool NEWTABLE = true; // flag to new a table
@@ -16,14 +16,14 @@ static const int ATTRIBUTENAMELENGTH = 32; //max length of attribute name
 static const int baseIndex = 1;
 
 //operation flag
-static const int EQUAL = 0;
-static const int NOEQUAL = 1;
-static const int LESSTHAN = 2;
-static const int GREATERTHAN = 3;
-static const int NOGREATERTHAN = 4;
-static const int NOLESSTHAN = 5;
+static const int EQUAL = 2; // ==
+static const int NOEQUAL = 5;// !=
+static const int LESSTHAN = 1;// <
+static const int GREATERTHAN = 0;// >
+static const int NOGREATERTHAN = 4;// <=
+static const int NOLESSTHAN = 3;// >=
 
 // type flag
 static const  int INT = 0;
-static const  int CHAR = 1;
-static const  int FLOAT = 2;
+static const  int FLOAT = 1;
+static const  int CHAR = 2;
