@@ -104,23 +104,20 @@ template<class KeyType>
 inline void Node<KeyType>::merge(Node<KeyType>& parent, string filename, IndexCatelog &indexcatelog)
 {
 	KeyType flag;
-	if (parent.size == 0)
+	int i = 0; //position
+	for (i = 0; i < parent.size + 1; i++)
+		if (parent.ptr[i]==index) break;
+	if (i == parent.size)
 	{
-		indexcatelog.root = index;
-	}
-	else
-	{
-		int i = 0; //position
-		for (i = 0; i < parent.size; i++)
-			if (parent.keys[i]>keys[0]) break;
-		if (i == parent.size)
+		Node<KeyType> bro;
+		loadBPnode(filename, bro, parent.ptr[i - 1], flag);
+		if (isLeaf == 1)
 		{
-			Node<KeyType> bro;
-			loadBPnode(filename, bro, parent.ptr[i - 1], indexcatelog, flag);
 			if (bro.size + size < indexcatelog.size)
 			{
 				bro.ptr.pop_back();
 				int k = 0;
+
 				for (k = 0; k < size; k++)
 				{
 					bro.keys.push_back(keys[k]);
@@ -134,24 +131,69 @@ inline void Node<KeyType>::merge(Node<KeyType>& parent, string filename, IndexCa
 			}
 			else
 			{
-				keys.insert(keys.begin(), bro.keys[bro.size - 1]);
-				ptr.insert(ptr.begin(), bro.ptr[bro.size - 1]);
-				bro.keys.erase(bro.keys.begin() + bro.size - 1);
-				bro.ptr.erase(bro.ptr.begin() + bro.size - 1);
+				keys.insert(keys.begin(), bro.keys[bro.size - 2]);
+				ptr.insert(ptr.begin(), bro.ptr[bro.size - 2]);
+				bro.keys.erase(bro.keys.begin() + bro.size - 2);
+				bro.ptr.erase(bro.ptr.begin() + bro.size - 2);
 				size += 1;
 				bro.size -= 1;
 				parent.keys[i - 1] = bro.keys[0];
 			}
-			saveBPnode(filename, bro, indexcatelog);
+			saveBPnode(filename, bro);
+			if ((parent.index == indexcatelog.root) && (parent.size == 0))
+				indexcatelog.root = bro.index;
 		}
 		else
 		{
-			Node<KeyType> bro;
-			loadBPnode(filename, bro, parent.ptr[i + 1], indexcatelog, flag);
+			if (bro.size + size + 1 < indexcatelog.size)
+			{
+				int k = 0;
+
+				Node<KeyType> son;
+				loadBPnode(filename, son, ptr[0], flag);
+				bro.keys.push_back(son.keys[0]);
+
+				for (k = 0; k < size; k++)
+				{
+					bro.keys.push_back(keys[k]);
+					bro.ptr.push_back(ptr[k]);
+				}
+				bro.ptr.push_back(ptr[k]);
+				bro.size += (size + 1);
+				parent.keys.erase(parent.keys.begin() + i - 1);
+				parent.ptr.erase(parent.ptr.begin() + i);
+				parent.size -= 1;
+			}
+			else
+			{
+				Node<KeyType> son;
+				loadBPnode(filename, son, ptr[0], flag);
+				keys.insert(keys.begin(), son.keys[0]);
+
+				//keys.insert(keys.begin(), bro.keys[bro.size - 2]);
+				ptr.insert(ptr.begin(), bro.ptr[bro.size - 1]);
+				bro.keys.erase(bro.keys.begin() + bro.size - 2);
+				bro.ptr.erase(bro.ptr.begin() + bro.size - 1);
+				size += 2;
+				bro.size -= 1;
+				parent.keys[i - 1] = bro.keys[0];
+			}
+			saveBPnode(filename, bro);
+			if ((parent.index == indexcatelog.root) && (parent.size == 0))
+				indexcatelog.root = bro.index;
+		}
+	}
+	else
+	{
+		Node<KeyType> bro;
+		loadBPnode(filename, bro, parent.ptr[i + 1], flag);
+		if (isLeaf == 1)
+		{
 			if (bro.size + size < indexcatelog.size)
 			{
 				ptr.pop_back();
 				int k = 0;
+
 				for (k = 0; k < bro.size; k++)
 				{
 					keys.push_back(bro.keys[k]);
@@ -162,6 +204,7 @@ inline void Node<KeyType>::merge(Node<KeyType>& parent, string filename, IndexCa
 				parent.keys.erase(parent.keys.begin() + i);
 				parent.ptr.erase(parent.ptr.begin() + i + 1);
 				parent.size -= 1;
+
 			}
 			else
 			{
@@ -173,10 +216,12 @@ inline void Node<KeyType>::merge(Node<KeyType>& parent, string filename, IndexCa
 				bro.size -= 1;
 				parent.keys[i] = bro.keys[0];
 			}
-			saveBPnode(filename, bro, indexcatelog);
 		}
-		saveBPnode(filename, parent, indexcatelog);
-	}
+		saveBPnode(filename, bro);
+		if ((parent.index == indexcatelog.root) && (parent.size == 0))
+			indexcatelog.root = bro.index;
+	}	
+	saveBPnode(filename, parent);
 }
 
 /*********************************statement of BPtree*******************************************/
@@ -189,6 +234,7 @@ void loadBPnode(string FileName, Node<string> &node, int nodeindex, string flag)
 void createIndex(int size, int KeyType, string FileName);
 void dropIndex(string filename);
 //search
+int searchIndex(string filename, string key);
 template<class KeyType>
 int searchIndex(string filename, KeyType key)
 {
@@ -234,6 +280,7 @@ int searchIndex(string filename, KeyType key)
 }
 
 //search by op
+vector<int> searchLessThan(string filename, string key, int closure);
 template<class KeyType>
 vector<int> searchLessThan(string filename, KeyType key, int closure)
 {
@@ -241,14 +288,16 @@ vector<int> searchLessThan(string filename, KeyType key, int closure)
 	indexcatelog.LoadIndexCatelog(filename);
 
 	int next_index;
-	KeyType flag;
+	KeyType flag = 0;
 
 	Node<KeyType> node;
 	loadBPnode(filename, node, indexcatelog.root, flag);
 	while (node.isLeaf != 1)
 	{
 		next_index = node.ptr[0];
-		node = loadBPnode(filename, node, next_index, flag);
+		node.keys.clear();
+		node.ptr.clear();
+		loadBPnode(filename, node, next_index, flag);
 	}
 	vector<int> result;
 	int i = 0;
@@ -258,19 +307,21 @@ vector<int> searchLessThan(string filename, KeyType key, int closure)
 		{
 			if (closure == 0)  //不包含
 			{
-				if (node.keys[i] <= key)
-					result.push_back(node.keys[i]);
+				if (node.keys[i] < key)
+					result.push_back(node.ptr[i]);
 			}
 			else if (closure == 1) //包含
 			{
-				if (node.keys[i] < key)
-					result.push_back(node.keys[i]);
+				if (node.keys[i] <= key)
+					result.push_back(node.ptr[i]);
 			}
 			else break;
 		}
-		if (i = node.size)
+		if (i == node.size)
 		{
 			next_index = node.ptr[node.size];
+			node.keys.clear();
+			node.ptr.clear();
 			loadBPnode(filename, node, next_index, flag);
 		}
 		else
@@ -279,6 +330,7 @@ vector<int> searchLessThan(string filename, KeyType key, int closure)
 	return result;
 }
 
+vector<int> searchBiggerThan(string filename, string key, int closure);
 template<class KeyType>
 vector<int> searchBiggerThan(string filename, KeyType key, int closure)
 {
@@ -299,10 +351,12 @@ vector<int> searchBiggerThan(string filename, KeyType key, int closure)
 			if (node.keys[i] > key) break;
 		}
 
-		if (i = node.size) //比非叶节点上任何一个搜索码值都要大
+		if (i == node.size) //比非叶节点上任何一个搜索码值都要大
 			next_index = node.ptr[node.size];
 		else
 			next_index = node.ptr[i];
+		node.keys.clear();
+		node.ptr.clear();
 		loadBPnode(filename, node, next_index, flag);
 	}
 	//搜索到叶节点
@@ -324,6 +378,8 @@ vector<int> searchBiggerThan(string filename, KeyType key, int closure)
 				result.push_back(node.ptr[k]);
 			i = 0;
 			next_index = node.ptr[node.size];
+			node.keys.clear();
+			node.ptr.clear();
 			loadBPnode(filename, node, next_index, flag);
 		}
 	}
@@ -358,6 +414,7 @@ int insert_in_leaf(Node<KeyType> &node, KeyType key, int ptr)
 	return i;
 }
 
+int BP_insert(string filename, int index, Node<string>& parent, string key, int ptr, IndexCatelog &indexcatelog);
 template<class KeyType>
 int BP_insert(string filename, int index, Node<KeyType>& parent, KeyType key, int ptr, IndexCatelog &indexcatelog)
 {
@@ -385,13 +442,6 @@ int BP_insert(string filename, int index, Node<KeyType>& parent, KeyType key, in
 		}
 			
 		result = BP_insert(filename, node.ptr[i], node, key, ptr, indexcatelog);
-		if (result == 0)
-		{
-			Node<KeyType> son;
-			loadBPnode(filename, son, node.ptr[i], flag);
-			if (node.keys[i] != son.keys[0])
-				node.keys[i] = son.keys[0];
-		}
 	}
 	if (node.size > indexcatelog.size-1)
 		node.split(parent, filename, indexcatelog);
@@ -417,14 +467,13 @@ int deleteIndex(string filename, KeyType key)
 	indexcatelog.SaveIndexCatelog(filename);
 	return result;
 }
-
 template<class KeyType>
 int delete_in_leaf(string filename, KeyType key, Node<KeyType> &node)
 {
 	int i; //position
 	for (i = 0; i < node.size; i++)
 		if (node.keys[i] == key) break;
-	if (i = node.size)
+	if (i == node.size)
 		cout << "您想要删除的值不存在哦" << endl;
 	if (node.isLeaf == 0 || node.size < 1 || node.keys[i] != key)
 		return -1;
@@ -433,8 +482,9 @@ int delete_in_leaf(string filename, KeyType key, Node<KeyType> &node)
 	node.size -= 1;
 	return i;
 }
+int BP_delete(string filename, int index, Node<string>& parent, string key, IndexCatelog &indexcatelog);
 template<class KeyType>
-int BP_delete(string filename, int index, Node<KeyType> parent, KeyType key, IndexCatelog &indexcatelog)
+int BP_delete(string filename, int index, Node<KeyType>& parent, KeyType key, IndexCatelog &indexcatelog)
 {
 
 	KeyType flag;
@@ -448,7 +498,7 @@ int BP_delete(string filename, int index, Node<KeyType> parent, KeyType key, Ind
 		int i;
 		for (i = 0; i < node.size; i++)
 			if (node.keys[i]>key) break;
-		result = BP_delete(filename, node.ptr[i], node, key);
+		result = BP_delete(filename, node.ptr[i], node, key, indexcatelog);
 		if (result == 0 && i < node.size)
 		{
 			Node<KeyType> son;
@@ -457,8 +507,20 @@ int BP_delete(string filename, int index, Node<KeyType> parent, KeyType key, Ind
 				node.keys[i - 1] = son.keys[0];
 		}
 	}
-	if (node.size < (indexcatelog.size - 1) / 2)
-		node.merge(parent, filename, indexcatelog);
+	if (node.isLeaf == 1)
+	{
+		if (node.size < ceil((double)(indexcatelog.size - 1) / 2))
+			node.merge(parent, filename, indexcatelog);
+	}
+	else if (parent.empty == 1)
+	{
+		return;
+	}
+	else
+	{
+		if (node.size < ceil((double)(indexcatelog.size / 2))-1)
+			node.merge(parent, filename, indexcatelog);
+	}
 
 	saveBPnode(filename, node);
 

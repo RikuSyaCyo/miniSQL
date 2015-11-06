@@ -33,7 +33,7 @@ int IndexCatelog::nextIndex()
 void IndexCatelog::LoadIndexCatelog(string filename)
 {
 	struct saveIndexCatelog IndexCatelog;
-	buffer.readFileBlock(&IndexCatelog, filename, 0, sizeof(IndexCatelog));
+	buffer.readFileBlock(&IndexCatelog, filename, baseIndex + 0, sizeof(IndexCatelog));
 	index = IndexCatelog.index;
 	KeyType = IndexCatelog.KeyType;
 	root = IndexCatelog.root;
@@ -47,5 +47,5 @@ void IndexCatelog::SaveIndexCatelog(string filename)
 	IndexCatelog.KeyType = KeyType;
 	IndexCatelog.root = root;
 	IndexCatelog.size = size;
-	buffer.writeFileBlock(&IndexCatelog, filename, 0, sizeof(IndexCatelog));
+	buffer.writeFileBlock(&IndexCatelog, filename, baseIndex + 0, sizeof(IndexCatelog));
 }
