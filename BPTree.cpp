@@ -10,6 +10,7 @@ struct node_int
 	bool isLeaf;
 	int index;
 	int size;
+	int min;
 	int keys[200];
 	int ptr[200];
 };
@@ -18,6 +19,7 @@ struct node_float
 	bool isLeaf;
 	int index;
 	int size;
+	float min;
 	float keys[200];
 	int ptr[200];
 };
@@ -26,6 +28,7 @@ struct node_string
 	bool isLeaf;
 	int index;
 	int size;
+	char min[256];
 	char keys[800];
 	int ptr[200];
 };
@@ -38,6 +41,7 @@ void saveBPnode(string filename, Node<int> node)
 	node_save.isLeaf = node.isLeaf;
 	node_save.index = node.index;
 	node_save.size = node.size;
+	node_save.min = node.min;
 	
 	//node_save.keys = new int[node.size];
 	//node_save.ptr = new int[node.size + 1];
@@ -60,6 +64,7 @@ void saveBPnode(string filename, Node<float> node)
 	node_save.isLeaf = node.isLeaf;
 	node_save.index = node.index;
 	node_save.size = node.size;
+	node_save.min = node.min;
 
 	//node_save.keys = new float[node.size];
 	//node_save.ptr = new int[node.size + 1];
@@ -84,6 +89,12 @@ void saveBPnode(string filename, Node<string> node)
 	node_save.index = node.index;
 	node_save.size = node.size;
 
+	for (int i = 0; i < node.min.length(); i++)
+	{
+		node_save.min[i] = node.min[i];
+	}
+	node_save.min[node.min.length()] = '\0';
+
 	//node_save.keys = new char[indexcatelog.KeyType*node.size];
 	//node_save.ptr = new int[node.size + 1];
 
@@ -103,7 +114,7 @@ void saveBPnode(string filename, Node<string> node)
 }
 
 //BPload
-void loadBPnode(string FileName, Node<int>& node, int nodeindex, int flag)
+void loadBPnode(string FileName, Node<int>& node, int nodeindex)
 {
 	IndexCatelog indexcatelog;
 	indexcatelog.LoadIndexCatelog(FileName);
@@ -116,6 +127,7 @@ void loadBPnode(string FileName, Node<int>& node, int nodeindex, int flag)
 	node.isLeaf = node_read.isLeaf;
 	node.index = node_read.index;
 	node.size = node_read.size;
+	node.min = node_read.min;
 	for (int i = 0; i < node.size; i++)
 	{
 		node.keys.push_back(node_read.keys[i]);
@@ -125,7 +137,7 @@ void loadBPnode(string FileName, Node<int>& node, int nodeindex, int flag)
 	indexcatelog.SaveIndexCatelog(FileName);
 	//cout << nodeindex << endl;
 }
-void loadBPnode(string FileName, Node<float> &node, int nodeindex, float flag)
+void loadBPnode(string FileName, Node<float> &node, int nodeindex)
 {
 	IndexCatelog indexcatelog;
 	indexcatelog.LoadIndexCatelog(FileName);
@@ -138,6 +150,7 @@ void loadBPnode(string FileName, Node<float> &node, int nodeindex, float flag)
 	node.isLeaf = node_read.isLeaf;
 	node.index = node_read.index;
 	node.size = node_read.size;
+	node.min = node_read.min;
 	for (int i = 0; i < node.size; i++)
 	{
 		node.keys.push_back(node_read.keys[i]);
@@ -146,7 +159,7 @@ void loadBPnode(string FileName, Node<float> &node, int nodeindex, float flag)
 	node.ptr.push_back(node_read.ptr[node.size]);
 	indexcatelog.SaveIndexCatelog(FileName);
 }
-void loadBPnode(string FileName, Node<string> &node, int nodeindex, string flag)
+void loadBPnode(string FileName, Node<string> &node, int nodeindex)
 {
 	IndexCatelog indexcatelog;
 	indexcatelog.LoadIndexCatelog(FileName);
@@ -159,6 +172,11 @@ void loadBPnode(string FileName, Node<string> &node, int nodeindex, string flag)
 	node.isLeaf = node_read.isLeaf;
 	node.index = node_read.index;
 	node.size = node_read.size;
+	char* min = node_read.min;
+	string smin = "";
+	smin.insert(0, min);
+	node.min = smin;
+
 	string read = "";
 	char* p= node_read.keys;
 	for (int i = 0; i < node.size; i++)
@@ -207,7 +225,7 @@ void dropIndex(string filename)
 	//buffer.delete(filename);
 }
 
-int searchIndex(string filename, string key)
+/*int searchIndex(string filename, string key)
 {
 	IndexCatelog indexcatelog;
 	indexcatelog.LoadIndexCatelog(filename);
@@ -384,9 +402,9 @@ int BP_delete(string filename, int index, Node<string>& parent, string key, Inde
 	string flag="";
 	int result = -1;
 	Node<string> node;
-	loadBPnode(filename, node, index, flag);
+	loadBPnode(filename, node, index);
 	if (node.isLeaf == 1)
-		delete_in_leaf(filename, key, node);
+		delete_in_leaf(filename, key, node, parent);
 	else
 	{
 		int i;
@@ -412,4 +430,4 @@ int BP_delete(string filename, int index, Node<string>& parent, string key, Inde
 	saveBPnode(filename, node);
 
 	return result;
-}
+}*/
