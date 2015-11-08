@@ -38,7 +38,6 @@ inline Node<KeyType>::~Node()
 template<class KeyType>
 inline void Node<KeyType>::split(Node<KeyType>& parent, string filename, IndexCatelog &indexcatelog)
 {
-	KeyType flag = 0;
 	if (parent.empty == 1)
 	{
 		parent.empty = 0;
@@ -163,7 +162,7 @@ inline void Node<KeyType>::merge(Node<KeyType>& parent, string filename, IndexCa
 
 				Node<KeyType> son;
 				loadBPnode(filename, son, ptr[0]);
-				bro.keys.push_back(son.keys[0]);
+				bro.keys.push_back(son.min);
 
 				for (k = 0; k < size ; k++)
 				{
@@ -181,7 +180,7 @@ inline void Node<KeyType>::merge(Node<KeyType>& parent, string filename, IndexCa
 			{
 				Node<KeyType> son;
 				loadBPnode(filename, son, ptr[0]);
-				keys.insert(keys.begin(), son.keys[0]);
+				keys.insert(keys.begin(), son.min);
 
 				//keys.insert(keys.begin(), bro.keys[bro.size - 2]);
 				ptr.insert(ptr.begin(), bro.ptr[bro.size]);
@@ -245,7 +244,7 @@ inline void Node<KeyType>::merge(Node<KeyType>& parent, string filename, IndexCa
 			{
 				Node<KeyType> son;
 				loadBPnode(filename, son, bro.ptr[0]);
-				keys.push_back(son.keys[0]);
+				keys.push_back(son.min);
 
 				int k = 0;
 				for (k = 0; k < bro.size; k++)
@@ -266,7 +265,7 @@ inline void Node<KeyType>::merge(Node<KeyType>& parent, string filename, IndexCa
 			{
 				Node<KeyType> son;
 				loadBPnode(filename, son, bro.ptr[0]);
-				keys.push_back(son.keys[0]);
+				keys.push_back(son.min);
 
 				ptr.insert(ptr.begin() + size + 1, bro.ptr[0]);
 				bro.keys.erase(bro.keys.begin());
@@ -296,7 +295,6 @@ void loadBPnode(string FileName, Node<string> &node, int nodeindex);
 void createIndex(int size, int KeyType, string FileName);
 void dropIndex(string filename);
 //search
-int searchIndex(string filename, string key);
 template<class KeyType>
 int searchIndex(string filename, KeyType key)
 {

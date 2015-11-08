@@ -12,10 +12,10 @@ int main()
 	/*wating for tes*/
 
 	string filename = "file.txt";
-	createIndex(4,-1, filename);
+	createIndex(4,4, filename);
 	srand((unsigned)time(NULL));
-	int insert[100];
-	for (int i = 0; i < 100; i++)
+	//int insert[10];
+	/*for (int i = 0; i < 200; i++)
 	{
 	    insert[i] = rand() % 1000;
 		
@@ -26,17 +26,17 @@ int main()
 	cout << insert[3] << " ";
 	cout << insert[4] << " ";
 	cout << insert[5] << " ";
-	cout << insert[6] << " ";
-	//string insert[10] = { "aaaa","bbbb","cccc","dddd","eeee","ffff","gggg","hhhh","iiii","jjjj" };
-    for (int i = 0; i <100; i++)
+	cout << insert[6] << " ";*/
+	string insert[10] = { "aaaa","bbbb","cccc","dddd","eeee","ffff","gggg","hhhh","iiii","jjjj" };
+    for (int i = 0; i <10; i++)
 	{
-	    insertIndex(filename, insert[i], insert[i]);
+	    insertIndex(filename, insert[i], i);
 		//cout << insert[i] << endl;
 	}
-	int flag = 1;
+	string flag = "";
 	BP_show(filename, flag);
 	system("pause");
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		deleteIndex(filename, insert[i]);
 		//deleteIndex(filename, 593);

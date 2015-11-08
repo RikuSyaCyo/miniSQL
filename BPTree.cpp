@@ -29,7 +29,7 @@ struct node_string
 	int index;
 	int size;
 	char min[256];
-	char keys[800];
+	char keys[1200];
 	int ptr[200];
 };
 
@@ -108,7 +108,7 @@ void saveBPnode(string filename, Node<string> node)
 		node_save.ptr[i] = node.ptr[i];
 	}
 	node_save.ptr[node.size] = node.ptr[node.size];
-	
+	//cout << sizeof(node_save) << endl;
 	buffer.writeFileBlock(&node_save, filename, baseIndex + node.index, sizeof(node_save));
 	indexcatelog.SaveIndexCatelog(filename);
 }
