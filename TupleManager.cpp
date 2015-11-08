@@ -31,12 +31,12 @@ TupleManager::~TupleManager()
 
 void TupleManager::readTupleBlock()
 {
-	buffer.readFileBlock(this, filePos.fileName, filePos.blockNo, sizeof(*this));
+	buffer.readFileBlock(this,filePos.filePath(), filePos.blockNo, sizeof(*this));
 }
 
 void TupleManager::writeTupleBlock()
 {
-	buffer.writeFileBlock(this, filePos.fileName, filePos.blockNo, sizeof(*this));
+	buffer.writeFileBlock(this,filePos.filePath(), filePos.blockNo, sizeof(*this));
 }
 
 bool TupleManager::isDelete()
@@ -48,6 +48,9 @@ bool TupleManager::isDelete()
 void TupleManager::Delete()
 {
 	readTupleBlock();
+	string tableName = belongTable;
+	TableManager table = catalog.getTable(tableName);
+	delInfBTree(table.getAttriCount()-1);
 	delFlag = true;
 	writeTupleBlock();
 }
@@ -79,49 +82,68 @@ void TupleManager::display()
 	cout << endl;
 }
 
-void TupleManager::InsValue(int attrIndex, string value)
+int TupleManager::InsAttriValue(int attrIndex, string value)
 {
-	readTupleBlock();
+	string tableName = belongTable;
+	TableManager table = catalog.getTable(tableName);
+	const Attribute& attr = table.getAttri(attrIndex);
+	//int k = value.length();
+	if (attr.strLength - 1 < value.length())
+		return INSERT_FAIL_BEYONGDLENGTH;
 	int offset = getOffset(attrIndex - 1);
 	char* ptr = data + offset;
 	strcpy_s((char*)ptr,value.length()+1, value.c_str());
 	if (attrIndex+1>attriNum)
 		attriNum = attrIndex + 1;
-	writeTupleBlock();
+	string indexFileName = table.strName() + table.getAttriName(attrIndex) + IndexFilePostfix;
+	if (table.hasIndexOn(attrIndex))
+	{
+		string insertValue=extendString(value,attr.strLength - 1);
+		insertIndex(indexFileName, insertValue, filePos.blockNo-baseIndex);
+	}
+	return INSERT_SUCCEED;
 }
 
-void TupleManager::InsValue(int attrIndex,const char* value)
+int TupleManager::InsAttriValue(int attrIndex, const char* value)
 {
 	string strValue = value;
-	InsValue(attrIndex,strValue);
+	return InsAttriValue(attrIndex, strValue);
 }
 
-void TupleManager::InsValue(int attrIndex, int value)
+int TupleManager::InsAttriValue(int attrIndex, int value)
 {
-	readTupleBlock();
+	string tableName = belongTable;
+	TableManager table = catalog.getTable(tableName);
+	string indexFileName = table.strName() + table.getAttriName(attrIndex) + IndexFilePostfix;
 	int offset = getOffset(attrIndex - 1);
 	void* ptr = data + offset;
 	*((int*)ptr) = value;
-	if (attrIndex + 1>attriNum)
-		attriNum = attrIndex + 1;
-	writeTupleBlock();
+	if (table.hasIndexOn(attrIndex))
+	{
+		insertIndex(indexFileName, value, filePos.blockNo-baseIndex);
+	}
+	return INSERT_SUCCEED;
 }
 
-void TupleManager::InsValue(int attrIndex, float value)
+int TupleManager::InsAttriValue(int attrIndex, float value)
 {
-	readTupleBlock();
+	string tableName = belongTable;
+	TableManager table = catalog.getTable(tableName);
+	string indexFileName = table.strName() + table.getAttriName(attrIndex) + IndexFilePostfix;
 	int offset = getOffset(attrIndex - 1);
 	void* ptr = data + offset;
 	*((float*)ptr) = value;
-	if (attrIndex + 1>attriNum)
-		attriNum = attrIndex + 1;
-	writeTupleBlock();
+	if (table.hasIndexOn(attrIndex))
+	{
+		insertIndex(indexFileName, value, filePos.blockNo-baseIndex);
+	}
+	return INSERT_SUCCEED;
 }
 
-void TupleManager::InsValue(int attrIndex, double value)
+int TupleManager::InsAttriValue(int attrIndex, double value)
 {
 	float f = (float)value;
-	InsValue(attrIndex,f);
+	return InsAttriValue(attrIndex, f);
 }
 
 string TupleManager::getValue(int attrIndex, string label)
@@ -261,4 +283,34 @@ int TupleManager::getOffset(int attrIndex)
 	TableManager table = catalog.getTable(tabName);
 	int offset = table.getAttrOffset(attrIndex);
 	return offset;
+}
+
+void TupleManager::delInfBTree(int attrIndex)
+{
+	string tableName = belongTable;
+	TableManager table = catalog.getTable(tableName);
+	for (int i = 0; i <=attrIndex; i++)
+	{
+		string indexFileName = table.strName() + table.getAttriName(i) + IndexFilePostfix;
+		if (table.hasIndexOn(i))
+		{
+			string delValue;
+			const Attribute& attribute = table.getAttri(i);
+			switch (table.getAttributeType(i))
+			{
+			case INT:
+				deleteIndex(indexFileName, getValue(i, 1));
+				break;
+			case FLOAT:
+				deleteIndex(indexFileName, getValue(i, (float)1.1));
+				break;
+			case CHAR:				
+				delValue = extendString(getValue(i, "1.1"), attribute.strLength - 1);
+				deleteIndex(indexFileName,delValue);
+				break;
+			default:
+				break;
+			}
+		}
+	}
 }

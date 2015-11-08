@@ -17,10 +17,12 @@ private:
 	static const int TUPLEMAXSIZE = 3072;
 
 	char belongTable[TABLENAMELENGTH];
+	FilePosition filePos;
 	char data[TUPLEMAXSIZE];
 	int attriNum;//有值的属性个数，实际是 max(有值属性标号)+1
 	bool delFlag;
 
+	TupleManager(string tabName, FilePosition fPos, bool Flag);
 	void writeTupleBlock();
 	void readTupleBlock();
 	string getValue(int attrIndex,string label);
@@ -33,22 +35,20 @@ private:
 	bool satisfy(int attrIndex, int op, float opValue);
 	bool satisfy(int attrIndex, int op, int opValue);
 	bool satisfy(int attrIndex, int op, string opValue);
+	int InsAttriValue(int attrIndex, string value);
+	int InsAttriValue(int attrIndex, const char* value);
+	int InsAttriValue(int attrIndex, int value);
+	int InsAttriValue(int attrIndex, float value);
+	int InsAttriValue(int attrIndex, double value);
 	int getOffset(int attrIndex);
-
+	void delInfBTree(int attrIndex);
 public:
 	friend class TableManager;
-
-	FilePosition filePos;
 	TupleManager(string tabName, int tupleIndex);
 	TupleManager(string tabName,FilePosition fPos);
-	TupleManager(string tabName,FilePosition fPos,bool Flag);
 	~TupleManager();
-	void InsValue(int attrIndex, string value);
-	void InsValue(int attrIndex,const char* value);
-	void InsValue(int attrIndex, int value);
-	void InsValue(int attrIndex, float value);
-	void InsValue(int attrIndex, double value);
-
+	template<typename T>
+	int InsValue(int attrIndex, T value);
 	/*template<typename T>
 	void InsValue(int attrIndex, T value);*/
 	//inline bool satisfy(int attrIndex, int op,const char* opValue);
@@ -59,7 +59,37 @@ public:
 	void display();
 };
 
-
+template<typename T>
+int TupleManager::InsValue(int attrIndex, T value)
+{
+	int flag = INSERT_SUCCEED;
+	readTupleBlock();
+	string tableName = belongTable;
+	TableManager table = catalog.getTable(tableName);
+	if (table.isUnique(attrIndex) == true)
+	{
+		TupleResults results = table.selectTuples(table.getAttriName(attrIndex), EQUAL, value);
+		if (results.size() > 0)
+		{
+			delFlag = true;
+			delInfBTree(attrIndex-1);
+			writeTupleBlock();
+			return INSERT_FAIL_NOTUNIQUE;
+		}
+	}
+	flag=InsAttriValue(attrIndex, value);
+	if (flag != INSERT_SUCCEED)
+	{
+		delFlag = true;
+		delInfBTree(attrIndex-1);
+		writeTupleBlock();
+		return flag;
+	}
+	if (attrIndex + 1>attriNum)
+		attriNum = attrIndex + 1;
+	writeTupleBlock();
+	return flag;
+}
 
 //template<typename T>
 //void TupleManager::InsValue(int attrIndex, T value)

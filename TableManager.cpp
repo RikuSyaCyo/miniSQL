@@ -1,5 +1,5 @@
 #include "TableManager.h"
-
+#include "CatalogManager.h"
 
 TableManager::TableManager(FilePosition fPos)
 {
@@ -56,6 +56,7 @@ void TableManager::InsertAttribute(string attname, int type, int charLength, int
 		break;
 	case 2:
 		attri.primary = true;
+		_CreateIndex(attname,attname+"PRIMARYINDEX");
 		attri.unique = true;
 		break;
 	default:
@@ -66,7 +67,7 @@ void TableManager::InsertAttribute(string attname, int type, int charLength, int
 
 void TableManager::InsertAttribute(string attname, int type,int uniqueInf)
 {
-	InsertAttribute(attname,type,0);
+	InsertAttribute(attname,type,0,uniqueInf);
 }
 
 Attribute TableManager::getAttri(int attrIndex) 
@@ -100,15 +101,77 @@ int  TableManager::getAttrIndex(string attrName)
 	}
 }
 
-void TableManager::CreateIndex(string attr)
+void TableManager::_CreateIndex(string attrName,string indexName)
 {
-	readTableBlock();
+	int attrIndex = getAttrIndex(attrName);
+	Attribute& attribute = attr[attrIndex];
+	string fileName = strName() + attrName + IndexFilePostfix;
+	switch (attribute.type)
+	{
+	case INT:
+		createIndex(120, INT_BP, fileName);
+		break;
+	case FLOAT:
+		createIndex(120, FLOAT_BP, fileName);
+		break;
+	case CHAR:
+		createIndex(4, attribute.strLength - 1, fileName);
+		break;
+	default:
+		break;
+	}
+	TupleResults tuplesRes = getAllTuples();
+	string insertValue;
+	for (int i = 0; i < tuplesRes.size(); i++)
+	{
+		TupleManager tuple(strName(),tuplesRes.getTupleIndexAt(i));
+		switch (attribute.type)
+		{
+		case INT:
+			insertIndex(fileName, tuple.getValue(attrIndex,1),tuple.filePos.blockNo-baseIndex);
+			break;
+		case FLOAT:
+			insertIndex(fileName, tuple.getValue(attrIndex, (float)1.1), tuple.filePos.blockNo-baseIndex);
+			break;
+		case CHAR:
+			insertValue = extendString(tuple.getValue(attrIndex, "abc"),attribute.strLength - 1);
+			insertIndex(fileName,insertValue ,tuple.filePos.blockNo-baseIndex);
+			break;
+		default:
+			break;
+		}
+	}
+	strcpy_s(attribute.indexName,indexName.c_str());	
+	catalog.IndexToTableMap[indexName] = strName();
+	catalog.IndexToAttributeMap[indexName] = attrName;
+	attribute.hasIndex = true;
 	writeTableBlock();
 }
 
-void TableManager::DeleteIndex(string attr)
+void TableManager::CreateIndex(string attrName,string indexName)
 {
 	readTableBlock();
+	_CreateIndex(attrName,indexName);
+	writeTableBlock();
+}
+
+void TableManager::_DeleteIndex(string attrName)
+{
+	int attrIndex = getAttrIndex(attrName);
+	Attribute& attribute = attr[attrIndex];
+	string fileName = strName() + attrName + IndexFilePostfix;
+	dropIndex(fileName);
+	string indexName = attribute.indexName;
+	catalog.IndexToTableMap.erase(indexName);
+	catalog.IndexToAttributeMap.erase(indexName);
+	attribute.hasIndex = false;
+	writeTableBlock();
+}
+
+void TableManager::DeleteIndex(string attrName)
+{
+	readTableBlock();
+	_DeleteIndex(attrName);
 	writeTableBlock();
 }
 
@@ -128,8 +191,18 @@ void TableManager::Delete()
 {
 	readTableBlock();
 	buffer.deleteFile(strName()+TupleFilePostfix);
+	for (int i = 0; i < attriArrayTop;i++)
+		if (hasIndexOn(i))
+		{
+			_DeleteIndex(getAttriName(i));
+		}
 	delFlag = true;	
 	writeTableBlock();
+}
+
+bool TableManager::hasIndexOn(int attrIndex)
+{
+	return attr[attrIndex].hasIndex;
 }
 
 bool TableManager::hasIndexOn(string attrName)
@@ -212,3 +285,125 @@ TupleResults TableManager::getAllTuples()
 	}
 	return results;
 }
+
+bool TableManager::isUnique(int attrIndex)
+{
+	return attr[attrIndex].unique;
+}
+
+TupleResults TableManager::selectTuples(string attrName, int op, string value)
+{
+	readTableBlock();
+	if (hasIndexOn(attrName))
+	{
+		int attrIndex = getAttrIndex(attrName);
+		string selValue = extendString(value, attr[attrIndex].strLength - 1);
+		return SelWithIndex(attrName, op, selValue);
+	}
+	else{
+		return SelWithoutIndex(attrName, op, value);
+	}
+}
+
+
+//TupleResults TableManager::SelWithIndex(string attr, int op, int value)
+//{
+//	string fileName = strName() + attr + IndexFilePostfix;
+//	TupleResults results(strName());
+//	int k;
+//	switch (op)
+//	{
+//	case EQUAL:
+//		k = searchIndex(fileName, value);
+//		results.insert(k);
+//		break;
+//	case NOEQUAL:
+//		return SelWithoutIndex(attr, op, value);
+//		break;
+//	case LESSTHAN:
+//		results.Set(searchLessThan(fileName, value, 0));
+//		break;
+//	case GREATERTHAN:
+//		results.Set(searchBiggerThan(fileName, value, 0));
+//		break;
+//	case NOGREATERTHAN:
+//		results.Set(searchLessThan(fileName, value, 1));
+//		break;
+//	case NOLESSTHAN:
+//		results.Set(searchBiggerThan(fileName, value, 1));
+//		break;
+//	default:
+//		break;
+//	}
+//	return results;
+//}
+//
+//TupleResults TableManager::SelWithIndex(string attr, int op, float value)
+//{
+//	string fileName = strName() + attr + IndexFilePostfix;
+//	TupleResults results(strName());
+//	int k;
+//	switch (op)
+//	{
+//	case EQUAL:
+//		k = searchIndex(fileName, value);
+//		results.insert(k);
+//		break;
+//	case NOEQUAL:
+//		return SelWithoutIndex(attr, op, value);
+//		break;
+//	case LESSTHAN:
+//		results.Set(searchLessThan(fileName, value, 0));
+//		break;
+//	case GREATERTHAN:
+//		results.Set(searchBiggerThan(fileName, value, 0));
+//		break;
+//	case NOGREATERTHAN:
+//		results.Set(searchLessThan(fileName, value, 1));
+//		break;
+//	case NOLESSTHAN:
+//		results.Set(searchBiggerThan(fileName, value, 1));
+//		break;
+//	default:
+//		break;
+//	}
+//	return results;
+//}
+//
+////TupleResults TableManager::SelWithIndex(string attr, int op, string value)
+////{
+////	TupleResults results(strName());
+////	return results;
+////}
+//
+//TupleResults TableManager::SelWithIndex(string attr, int op, string value)
+//{
+//	string fileName = strName() + attr + IndexFilePostfix;
+//	TupleResults results(strName());
+//	int k;
+//	switch (op)
+//	{
+//	case EQUAL:
+//		k = searchIndex(fileName, value);
+//		results.insert(k);
+//		break;
+//	case NOEQUAL:
+//		return SelWithoutIndex(attr, op, value);
+//		break;
+//	case LESSTHAN:
+//		results.Set(searchLessThan(fileName, value, 0));
+//		break;
+//	case GREATERTHAN:
+//		results.Set(searchBiggerThan(fileName, value, 0));
+//		break;
+//	case NOGREATERTHAN:
+//		results.Set(searchLessThan(fileName, value, 1));
+//		break;
+//	case NOLESSTHAN:
+//		results.Set(searchBiggerThan(fileName, value, 1));
+//		break;
+//	default:
+//		break;
+//	}
+//	return results;
+//}

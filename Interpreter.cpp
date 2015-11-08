@@ -11,7 +11,7 @@
 #include "ConstantTable.h"
 #include "FilePosition.h"
 #include "TupleResults.h"
-#define MAX_CMD_LENGTH 100
+#define MAX_CMD_LENGTH 10000
 using namespace std;
 
 BufferPool buffer;
@@ -48,7 +48,6 @@ int main(){
 			//	语法检测结束，下面进行语义检测，同时进入内部调用，并且转交信息输出权
 			else{
 				API();
-				cout << error_info << endl;
 			}
 				
 		}
@@ -69,10 +68,6 @@ bool GetCommand(string &cmd){
 		if(cmd.length() != 0)
 			sql = " " + sql;
 		cmd.append(sql);
-		/*
-		temp = sql;
-		cmd = cmd + " ";
-		cmd = cmd +temp;*/
 		int pos = cmd.find(";");
 		//	如果已经输入了";"结束标记符
 		if(pos != -1)
@@ -160,7 +155,6 @@ string SplitValue(string cmd)
 			break;
 		}
 	}
-	cout<<"sql:"<<sql<<endl;
 	return sql;
 }
 
@@ -171,7 +165,7 @@ int GetCompareType(string &type)
 	else if(type == "=") return 2;	
 	else if(type == ">=") return 3;
 	else if(type == "<=") return 4;
-	else if(type == "!=") return 5;
+	else if(type == "<>") return 5;
 	else return 404;	
 }
 
@@ -187,8 +181,8 @@ int GetCommandType(string &cmd){
 	else if(op1 == "drop"){
 	    string op2 = GetValue(cmd, 2);
 		if(op2=="table") return 1;
-		else if(op2=="index") return 3;
-		else return 404;	
+		else return 3;
+			
 	}	
 	else if(op1 == "insert") return 4;
 	else if(op1 == "delete") return 5;
@@ -278,17 +272,15 @@ bool ExecFile(string &cmd){
 		return false;
 	}
 	
-	while(1)
+	while(true)
 	{
 	bool finish = false;
 	sql = "";
 	string temp ;
-	cout<<"succeed!"<<endl;
 	while(!finish)
 	{
 		fin.getline(line, MAX_CMD_LENGTH);
 		temp = line;
-		cout<<"line:"<<temp<<endl;
 		if(sql.length() != 0)
 			temp = " " + temp;
 		sql.append(temp);
@@ -309,21 +301,21 @@ bool ExecFile(string &cmd){
 			     return false;
 			}
 		}
-		cout<<"sql:"<<sql<<endl;
-	}
-		//	如果没有输入";"结束标记符，则继续接受输入
-    sql = SplitValue(sql);
-	cout<<"sql:"<<sql<<endl ;	
+	}//	如果没有输入";"结束标记符，则继续接受输入
+
+    sql = SplitValue(sql);	
     if(!AnalyzeCommand(sql))
 		cout << error_info << endl;
+	else if(GetCommandType(sql)==8) return true;	
 	else API();
-		
-    if(fin.eof())
-			break;	
+	
+    if(fin.eof()){
+    		break;
+    }	
 	}
-	cotype = 7;
-	fin.close();
-	return true;
+    cotype = 7;
+    fin.close();
+    return true;
 	
 }
 
@@ -353,8 +345,6 @@ bool CheckCreateTable(string &cmd){
 	}
 	
 	table.anum = count-1;
-	cout<<"aunm:"<<table.anum<<endl;
-	
 	//获取表名
 	temp = GetValue(cmd, 3);
 	if(temp == "," || temp == "(" || temp == ")" || temp == ";")
@@ -363,8 +353,6 @@ bool CheckCreateTable(string &cmd){
 		return false;
 	}
 	table.tname = temp;
-	cout<<"tname:"<<table.tname<<endl;
-	
 	if(GetValue(cmd, 4) != "(")
 	{
 		error_info = "Wrong format,lack ( !";
@@ -382,10 +370,8 @@ bool CheckCreateTable(string &cmd){
 			return false;
 		}
 		table.a[i].aname = temp;
-		cout<<"aname:"<<table.a[i].aname<<endl;
 		temp = GetValue(cmd, ++count);
 		table.a[i].aid = i+1;
-		cout<<"aid:"<<table.a[i].aid<<endl;
 		//如果属性数据类型为char(n)
 		if(temp == "char")
 		{
@@ -402,7 +388,6 @@ bool CheckCreateTable(string &cmd){
             for(int k=0; k<temp.length(); k++){
              	flag=0;
 			    for(int j=0;j<=9;j++){
-			    	cout<<temp.at(k)<<endl;
 			    	if((int)temp.at(k) == (j+'0')){ 
 					l = j;
 					flag = 1;
@@ -414,7 +399,6 @@ bool CheckCreateTable(string &cmd){
 			    	return false;
 			    }
 			    len = len*10+l;
-			    cout<<"len:"<<len<<endl;
 			}
 			if(len>255){
 				error_info = "Range beyond!";
@@ -428,7 +412,6 @@ bool CheckCreateTable(string &cmd){
 			}
 			
 			table.a[i].alen = len;
-			cout<<"a.len:"<<table.a[i].alen<<endl;
 			
 			/* 
 			if(temp.find('(') != 4)
@@ -538,8 +521,7 @@ bool CheckCreateTable(string &cmd){
 		return false;
 	}
 	
-	/////////////////////////////////////////
-	//这里读去primary_key的属性名字
+	//读取primary_key的属性名字
 	temp = GetValue(cmd, ++count);
 	bool ae = false;		//用来确定属性是否正确
 	for(int i=0; i<table.anum; i++)
@@ -548,7 +530,6 @@ bool CheckCreateTable(string &cmd){
 		{
 			table.a[i].atype = 2;
 			ae = true;
-			cout<<"primary:"<<table.a[i].aname<<endl;
 			break;
 		}
 		
@@ -667,14 +648,14 @@ bool CheckCreateIndex(string &cmd){
 
 bool CheckDropIndex	(string &cmd){
 	string temp ;
-	temp = GetValue(cmd, 3);
+	temp = GetValue(cmd, 2);
 	if(temp == ";")
 	{
 		error_info = "Lack index name!";
 		return false;
 	}
 	
-	if(GetValue(cmd, 4) != ";")
+	if(GetValue(cmd, 3) != ";")
 	{
 		error_info = "Format wrong , lack ; !";
 		return false;
@@ -699,7 +680,6 @@ bool CheckInsert(string &cmd){
 			break;
 	}
 	vnum = count;
-	cout<<"vnum:"<<vnum<<endl;
 	
 	if(GetValue(cmd, 2) != "into")
 	{   
@@ -810,13 +790,12 @@ bool CheckDelete(string &cmd){
 		if(GetValue(cmd, i) == "and")
 			count++;
 	}
-	cout<<"count:"<<count<<endl;
 	conditions = new Condition;
 
 	conditions->next = NULL;
 
 	temp = GetValue(cmd, 5);
-	if(temp == ";" || temp == "," || temp == "(" || temp == ")"|| temp == ">"|| temp == "<"|| temp == "="|| temp == ">="|| temp == "<="|| temp == "!=" )
+	if(temp == ";" || temp == "," || temp == "(" || temp == ")"|| temp == ">"|| temp == "<"|| temp == "="|| temp == ">="|| temp == "<="|| temp == "<>" )
 	{
 		error_info = "Condition's format is wrong!";
 		return false;
@@ -832,7 +811,7 @@ bool CheckDelete(string &cmd){
 	conditions->cmtype = GetCompareType(temp);
 
 	temp = GetValue(cmd, 7);
-	if(temp == ";" || temp == "," || temp == "(" || temp == ")"|| temp == ">"|| temp == "<"|| temp == "="|| temp == ">="|| temp == "<="|| temp == "!=" )
+	if(temp == ";" || temp == "," || temp == "(" || temp == ")"|| temp == ">"|| temp == "<"|| temp == "="|| temp == ">="|| temp == "<="|| temp == "<>" )
 	{
 		error_info = "Condition's format is wrong!";
 		return false;
@@ -860,7 +839,7 @@ bool CheckDelete(string &cmd){
 		}
 		
 		temp = GetValue(cmd, 5+4*i);
-		if(temp == ";" || temp == "," || temp == "(" || temp == ")"|| temp == ">"|| temp == "<"|| temp == "="|| temp == ">="|| temp == "<="|| temp == "!=" )
+		if(temp == ";" || temp == "," || temp == "(" || temp == ")"|| temp == ">"|| temp == "<"|| temp == "="|| temp == ">="|| temp == "<="|| temp == "<>" )
 	   {
             error_info = "Condition's format is wrong!";
 			return false;
@@ -875,7 +854,7 @@ bool CheckDelete(string &cmd){
 		}
 		c->cmtype = GetCompareType(temp);
 		temp = GetValue(cmd, 7+4*i);
-		if(temp == ";" || temp == "," || temp == "(" || temp == ")"|| temp == ">"|| temp == "<"|| temp == "="|| temp == ">="|| temp == "<="|| temp == "!=" )
+		if(temp == ";" || temp == "," || temp == "(" || temp == ")"|| temp == ">"|| temp == "<"|| temp == "="|| temp == ">="|| temp == "<="|| temp == "<>" )
 	   {
             error_info = "Condition's format is wrong!";
 			return false;
@@ -887,14 +866,7 @@ bool CheckDelete(string &cmd){
 		t->next = c;
 		t = c;
 	}
-	while(conditions!=NULL)
-	{
-		cout<<"aname:"<<conditions->aname<<endl;
-			cout<<"value:"<<conditions->value<<endl;
-				cout<<"cmtype:"<<conditions->cmtype<<endl;
-				conditions = conditions->next;
-		
-	}
+	
 	return true;
 }
 
@@ -944,7 +916,6 @@ bool CheckSelect(string &cmd){
 			count++;
 	}
 	
-	cout<<"count:"<<count<<endl;
 	conditions = new Condition;
 
 	conditions->next = NULL;
@@ -1024,14 +995,7 @@ bool CheckSelect(string &cmd){
 		t->next = c;
 		t = c;
 	}
-	while(conditions!=NULL)
-	{
-		cout<<"aname:"<<conditions->aname<<endl;
-			cout<<"value:"<<conditions->value<<endl;
-				cout<<"cmtype:"<<conditions->cmtype<<endl;
-				conditions = conditions->next;
-		
-	}
+
 	return true;
 	
 }

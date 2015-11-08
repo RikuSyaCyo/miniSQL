@@ -32,9 +32,15 @@ string TupleResults::tableName()
 
 void TupleResults::And(const TupleResults& res)
 {
+	/*if (res.size() < tuples.size())
+	{
+		vector<int> temp = res.tuples;
+		res.tuples = tuples;
+		tuples = temp;
+	}*/
 	int thisSize = tuples.size();
 	vector<int>::iterator iter;
-	for (iter = tuples.begin(); iter != tuples.end(); )
+	for (iter = tuples.begin(); iter != tuples.end();)
 	{
 		if (find(res.tuples.begin(), res.tuples.end(), *iter) == res.tuples.end())
 		{
@@ -43,4 +49,9 @@ void TupleResults::And(const TupleResults& res)
 		else
 			iter++;
 	}
+}
+
+void TupleResults::Set(const vector<int>& res)
+{
+	tuples = res;
 }

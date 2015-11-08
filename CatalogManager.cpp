@@ -20,11 +20,17 @@ CatalogManager::CatalogManager()
 		for (int i = 0; i < tableNum; i++)
 		{
 			fPos.blockNo = baseIndex + i + 1;
-			//cout << sizeof(TableManager) << endl;
 			TableManager table(fPos);
 			if (table.isDelete() == false)
 			{
 				tableMap[table.strName()] = fPos;
+				for (int j = 0; j < table.attriArrayTop;j++)
+					if (table.attr[j].hasIndex)
+					{
+						string indexName = table.attr[j].indexName;
+						IndexToTableMap[indexName] = table.strName();
+						IndexToAttributeMap[indexName] = table.getAttriName(j);
+					}
 			}
 		}
 	}
@@ -74,6 +80,30 @@ bool CatalogManager::deleteTable(string tabName)
 bool CatalogManager::findTable(string strName)
 {
 	if (tableMap.count(strName) > 0)
+		return true;
+	else
+		return false;
+}
+
+void CatalogManager::CreateIndexOn(string tableName, string attributeName, string indexName)
+{
+	TableManager table = getTable(tableName);
+	table.CreateIndex(attributeName,indexName);
+	//IndexToTableMap[indexName] = tableName;
+	//IndexToAttributeMap[indexName] = attributeName;
+}
+
+void CatalogManager::deleteIndex(string indexName)
+{
+	string tableName = IndexToTableMap[indexName];
+	string attributeName = IndexToAttributeMap[indexName];
+	TableManager table = catalog.getTable(tableName);
+	table.DeleteIndex(attributeName);
+}
+
+bool CatalogManager::hasIndex(string indexName)
+{
+	if (IndexToTableMap.count(indexName) > 0)
 		return true;
 	else
 		return false;

@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <iostream>
 using namespace std;
 
 class TupleResults
@@ -15,5 +16,6 @@ public:
 	int size() const;
 	string tableName();
 	void And(const TupleResults& res);
+	void Set(const vector<int>& res);
 };
 

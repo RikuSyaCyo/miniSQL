@@ -44,7 +44,7 @@ typedef struct Condition
 	string aname;			//条件所对应的属性名
 	string value;			//条件所需要进行比较的值
 	int dtype;              //item1,item2是什么类型的,0是int,1是float,2是char
-	int cmtype;					// 0是>,1是<,2是=,3是>=,4是<=,5是!=
+	int cmtype;					// 0是>,1是<,2是=,3是>=,4是<=,5是<>
 	ConditionList next;	//指向下一个条件
 }	Condition;
 

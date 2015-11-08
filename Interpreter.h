@@ -9,9 +9,11 @@ int main();
 //	从标准输入设备读取用户输入的一条命令
 bool GetCommand(string &cmd);
 
-string GetValue(string cmd, int count, char stop=' ');
-
+//分离命令中的单词
 string SplitValue(string cmd);
+
+//获取命令中的第n个词语
+string GetValue(string cmd, int count, char stop=' ');
 
 int GetCompareType(string &ctype);
 //	得到操作类型，并返回

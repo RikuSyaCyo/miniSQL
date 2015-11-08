@@ -6,9 +6,10 @@ using namespace std;
 
 class FilePosition
 {
-public:
+private:
 	static const int FILENAMELENGTH = 32; // max length of file name
-	char fileName[FILENAMELENGTH];		
+	char fileName[FILENAMELENGTH];
+public:
 	int blockNo;
 	FilePosition();
 	~FilePosition();

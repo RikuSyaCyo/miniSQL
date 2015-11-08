@@ -108,7 +108,7 @@ void saveBPnode(string filename, Node<string> node)
 		node_save.ptr[i] = node.ptr[i];
 	}
 	node_save.ptr[node.size] = node.ptr[node.size];
-	//cout << sizeof(node_save) << endl;
+	
 	buffer.writeFileBlock(&node_save, filename, baseIndex + node.index, sizeof(node_save));
 	indexcatelog.SaveIndexCatelog(filename);
 }
@@ -195,6 +195,8 @@ void loadBPnode(string FileName, Node<string> &node, int nodeindex)
 void createIndex(int size, int KeyType, string FileName)
 {
 	IndexCatelog IndexCatelog(size, KeyType);
+	IndexCatelog.SaveIndexCatelog(FileName);
+
 	if (KeyType == INT_BP)
 	{
 		Node<int> node;
@@ -223,6 +225,7 @@ void createIndex(int size, int KeyType, string FileName)
 void dropIndex(string filename)
 {
 	//buffer.delete(filename);
+	buffer.deleteFile(filename);
 }
 
 /*int searchIndex(string filename, string key)

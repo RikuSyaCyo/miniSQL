@@ -10,6 +10,7 @@ public:
 	bool primary;//是否为primary key
 	bool unique;//是否unique
 	bool hasIndex;//属性上是否有index
+	char indexName[INDEXNAMELENGTH];
 	int Bytes() const;//属性所占字节数
 };
 

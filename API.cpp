@@ -86,15 +86,7 @@ switch(cotype)
 	
 }
 
-void ReadTable()
-{
-	
-}
 
-void ReadIndex(string iname)
-{
-
-}
 
 
 bool CallCreateTable()
@@ -126,39 +118,49 @@ bool CallCreateTable()
 
 bool CallDropTable()
 {
-	/*if(!DropTable(tname))
-		return false;
-	*/
-	//TableManager tab = catalog.getTable(table.tname);
-	if (!catalog.findTable(table.tname))
+	
+	if (!catalog.findTable(tname))
 	{
 		error_info = "Table not exsists!";
 		return false;
 	}
 	else{
-		return catalog.deleteTable(table.tname);
+		return catalog.deleteTable(tname);
 	}
 	return true;
 }
 
 bool CallCreateIndex()
-{   /*
-   if(IndexExist(index.tname))
+{   
+	if (!catalog.findTable(index.tname))
 	{
-		error_info="Index name repeat!";
+		error_info = "Table not exsists!";
 		return false;
 	}
-	else if(!CreateIndex(index))
+	TableManager tab = catalog.getTable(index.tname);
+	if (tab.hasIndexOn(index.aname) == true)
+	{
+		error_info = "Index exsists!";
 		return false;
-	*/
+	}
+	if (tab.isUnique(tab.getAttrIndex(index.aname)) == false)
+	{
+		error_info = "The attribute is not unique!";
+		return false;
+	}
+	catalog.CreateIndexOn(index.tname,index.aname,index.iname);
+
 	return true;
 }
 
 bool CallDropIndex()
-{/*
-	if(!DropIndex(iname))
+{
+	if (catalog.hasIndex(iname) == false)
+	{
+		error_info = "Index not exsists!";
 		return false;
-	*/
+	}
+	catalog.deleteIndex(iname);
 	return true;
 }
 
@@ -179,16 +181,28 @@ bool CallInsert()
 	{
 		table.a[k].dtype = tab.getAttributeType(k);
 	}
-	
+	table.anum = tab.attributeCount();
 	//下面对values[]进行类型确认
 	for(int i=0; i<table.anum; i++)
 	{
 	 if(table.a[i].dtype == 0){
 			int flag;
-			for(int j=0; j<values[i].length(); j++){
+			string inum ;
+			 if(values[i].find('-') != -1){
+            	if(values[i].find('-') != 0){
+            		error_info = "Value is illegal !";
+				    return false;	
+	            }
+                int a1 = values[i].find('-');
+                string inum1 = values[i].substr(0, a1);
+                string inum2 = values[i].substr(a1+1,values[i].length()-a1-1 );
+                inum = inum1+inum2;
+            }
+            else inum = values[i];
+			for(int j=0; j<inum.length(); j++){
              	flag=0;
 			    for(int k=0;k<=9;k++){
-			    	if((int)(values[i].at(j)) == k + '0'){ 
+			    	if((int)(inum.at(j)) == k + '0'){ 
 					flag=1;
 					break;
 	    			}
@@ -199,27 +213,37 @@ bool CallInsert()
     			    }
     			    
 			}
-		cout<<"value:"<<values[i]<<endl;
+		
 		}
-		string num;
+		string num ,fnum;
 	   if(table.a[i].dtype == 1)
 		{
             int flag;
-            cout<<"values:"<<values[i]<<endl;
-            cout<<"values:"<<values[i].find('.')<<endl;
-            
-            if(values[i].find('.') != -1){
-                int t1 = values[i].find('.');
+            if(values[i].find('-') != -1){
+            	if(values[i].find('-') != 0){
+            		error_info = "Value is illegal !";
+				    return false;	
+	            }
+                int t1 = values[i].find('-');
                 string num1 = values[i].substr(0, t1);
                 string num2 = values[i].substr(t1+1,values[i].length()-t1-1 );
                 num = num1+num2;
-                cout<<"num:"<<num<<endl;
+               
             }
             else num = values[i] ;
-            for(int j=0; j<num.length(); j++){
+            if(num.find('.') != -1){
+                int t2 = num.find('.');
+                string num3 = num.substr(0, t2);
+                string num4 = num.substr(t2+1,values[i].length()-t2-1 );
+                fnum = num3+num4;
+               
+            }
+            else fnum = num ;
+			
+            for(int j=0; j<fnum.length(); j++){
              	flag=0;
 			    for(int k=0;k<=9;k++){
-			    	if((int)(num.at(j)) == k + '0'){ 
+			    	if((int)(fnum.at(j)) == k + '0'){ 
 					flag=1;
 					break;
 	    			}
@@ -229,11 +253,10 @@ bool CallInsert()
 				    return false;
     			    }
 			}
-			cout<<"value:"<<values[i]<<endl;
+			
 		}
 		
 		if(table.a[i].dtype == 2){
-			cout<<"value:"<<values[i]<<endl;
 			if(values[i].find('\'') != 0){
 		        error_info="Value's format is wrong, lack ' !";
 		        return false;
@@ -243,11 +266,13 @@ bool CallInsert()
 		        return false;
 			}
 		    values[i]= values[i].substr(1,values[i].length()-2);
-			cout<<"value:"<<values[i]<<endl;	
+				
 		}
 		
 	}
 	
+
+	int inf;
 	TupleManager tuple = tab.CreateNewTuple();
 	for (int k = 0; k < tab.attributeCount(); k++)
 	{
@@ -261,40 +286,32 @@ bool CallInsert()
 		case INT:
 			int number;
 			ss >> number;
-			tuple.InsValue(k,number);
+			inf=tuple.InsValue(k,number);
 			break;
 		case FLOAT:
 			float number_float;
 			ss >> number_float;
-			tuple.InsValue(k,number_float);
+			inf=tuple.InsValue(k,number_float);
 			break;
 		case CHAR:
-			tuple.InsValue(k,str);
+			inf=tuple.InsValue(k,str);
 			break;
 		default:
 			break;
 		}
+		if (inf != INSERT_SUCCEED)
+		{
+			if (inf == INSERT_FAIL_NOTUNIQUE)
+			{
+				error_info = "The value is not unique.";
+			}
+			else
+			{
+				error_info = "CHAR value is out of length.";
+			}
+			return false;
+		}
 	}
-
-	//for(int i=0; i<value_count; i++)
-	//	cout << "test" << values[i] << "test" << endl;
-	
-	
-	/*
-	cout << "table name	:	" << table.tname << endl;
-	for(int i=0; i<table.anum; i++)
-	{
-		cout << table.a[i].aname << "  ";
-		cout << table.a[i].dtype << "  ";
-		cout << table.a[i].atype << "  ";
-		cout << table.a[i].alen << "  ";
-		cout << table.a[i].aid << endl;
-	}
-	*/
-	/*
-	if(!Insert(table, values))
-		return false;
-	*/
 	return true;
 }
 
@@ -312,7 +329,7 @@ bool CallSelect()
 		table.a[k].aname = tab.getAttriName(k);
 		table.a[k].dtype = tab.getAttributeType(k);
 	}
-
+	table.anum = tab.attributeCount();
 	ConditionList temp = new Condition;
 	temp = conditions;
 	while(temp!=NULL) {
@@ -323,10 +340,22 @@ bool CallSelect()
 					flag = 1;
 					if(table.a[i].dtype == 0){
 			            int flag1;
-		 	            for(int j=0; j<temp->value.length(); j++){
+			            string inum ;
+			            if(temp->value.find('-') != -1){
+            	             if(temp->value.find('-') != 0){
+            		         error_info = "Value is illegal !";
+				             return false;	
+	                         }
+                             int a1 = temp->value.find('-');
+                             string inum1 = temp->value.substr(0, a1);
+                             string inum2 = temp->value.substr(a1+1,temp->value.length()-a1-1 );
+                             inum = inum1+inum2;
+                             }
+                        else inum = temp->value;
+		 	            for(int j=0; j<inum.length(); j++){
              	            flag1=0;
                             for(int k=0;k<=9;k++){
-			    	              if((int)(temp->value.at(j)) == k + '0'){ 
+			    	              if((int)(inum.at(j)) == k + '0'){ 
 					                  flag1=1;
 					                  break;
     			                  }
@@ -337,24 +366,33 @@ bool CallSelect()
   			                 }
     			    
 			            }
-		              cout<<"value:"<<temp->value<<endl;
 		              temp->dtype = 0;
 		            }
-		            string num;
+		            string num,fnum;
 	                if(table.a[i].dtype == 1){
                          int flag1;
-                          if(temp->value.find('.') != -1){
-                              int t1 = temp->value.find('.');
-                              string num1 = temp->value.substr(0, t1);
-                              string num2 = temp->value.substr(t1+1,temp->value.length()-t1-1 );
-                              num = num1+num2;
-                              cout<<"num:"<<num<<endl;
+                         if(temp->value.find('-') != -1){
+							 if (temp->value.find('-') != 0){
+            		               error_info = "Value is illegal !";
+				                   return false;	
+	                          }
+							 int t1 = temp->value.find('-');
+							 string num1 = temp->value.substr(0, t1);
+							 string num2 = temp->value.substr(t1 + 1, temp->value.length() - t1 - 1);
+                         num = num1+num2;
                          }
-                         else num = temp->value ;
-                         for(int j=0; j<num.length(); j++){
+                         else num = temp->dtype ;
+                         if(num.find('.') != -1){
+                         int t2 = num.find('.');
+                         string num3 = num.substr(0, t2);
+                         string num4 = num.substr(t2+1,num.length()-t2-1 );
+                         fnum = num3+num4;
+                        }
+                         else fnum = num ;
+                         for(int j=0; j<fnum.length(); j++){
              	              flag1 = 0;
 			                  for(int k=0;k<=9;k++){
-			    	               if((int)(num.at(j)) == k + '0'){ 
+			    	               if((int)(fnum.at(j)) == k + '0'){ 
 	                                    flag1=1;
 					                    break;
     			                   }
@@ -364,7 +402,6 @@ bool CallSelect()
 				                   return false;
     			              }
 			             }
-			             cout<<"value:"<<temp->value<<endl;
 			             temp->dtype = 1;
 		           }
 		
@@ -378,91 +415,79 @@ bool CallSelect()
 		                      return false;
 			            }
                         temp->value= temp->value.substr(1,temp->value.length()-2);
-			            cout<<"value:"<<temp->value<<endl;	
 			            temp->dtype = 2;
 	               }
 		     }		
 				
 		}
 		if(flag == 0){
-			error_info = "Attribute is not existed!";
+			error_info = "Attribute not exists!";
 			return false;
 		}
 		temp = temp->next;			
 	}
 	
-	TupleResults results=tab.getAllTuples();
-	while (conditions != NULL){
-		TupleResults nowResults(tab.strName);
-		string str =conditions->value;
-		int type = conditions->dtype;
-		stringstream ss;
-		ss << str;
-		switch (type)
-		{
-		case INT:
-			int number;
-			ss >> number;
-			nowResults = tab.selectTuples(conditions->aname,conditions->cmtype,number);
-			break;
-		case FLOAT:
-			float number_float;
-			ss >> number_float;
-			nowResults = tab.selectTuples(conditions->aname, conditions->cmtype, number_float);
-			break;
-		case CHAR:
-			nowResults = tab.selectTuples(conditions->aname, conditions->cmtype,str);
-			break;
-		default:
-			break;
+	int cnt = 0;
+	TupleResults results(tab.strName());
+	if (conditions == NULL)
+		results = tab.getAllTuples();
+	else
+		while (conditions != NULL){
+			TupleResults nowResults(tab.strName());
+			string str = conditions->value;
+			int type = conditions->dtype;
+			stringstream ss;
+			ss << str;
+			switch (type)
+			{
+			case INT:
+				int number;
+				ss >> number;
+				nowResults = tab.selectTuples(conditions->aname, conditions->cmtype, number);
+				break;
+			case FLOAT:
+				float number_float;
+				ss >> number_float;
+				nowResults = tab.selectTuples(conditions->aname, conditions->cmtype, number_float);
+				break;
+			case CHAR:
+				nowResults = tab.selectTuples(conditions->aname, conditions->cmtype, str);
+				break;
+			default:
+				break;
+			}
+			if (cnt == 0)
+				results = nowResults;
+			else
+				results.And(nowResults);
+			cnt++;
+			conditions = conditions->next;
 		}
-		results.And(nowResults);
-		conditions = conditions->next;
-	}	
 	
-	tab.disTableInf();
-	for (int i = 0; i < results.size(); i++)
+	if (results.size() <= 100)
 	{
-		TupleManager tuple(results.tableName(), results.getTupleIndexAt(i));
-		tuple.display();
+		tab.disTableInf();
+		for (int i = 0; i < results.size(); i++)
+		{
+			TupleManager tuple(results.tableName(), results.getTupleIndexAt(i));
+			tuple.display();
+		}
 	}
-
-	//cout << "table_name	:	" << table.tname << endl;
-	//for(int i=0; i<table.anum; i++)
-	//{
-	//	cout << table.a[i].aname << "  ";
-	//	cout << table.a[i].dtype << "  ";
-	//	cout << table.a[i].atype << "  ";
-	//	cout << table.a[i].alen << "  ";
-	//	cout << table.a[i].aid << endl;
-	//}
-	
-	
-	//while(true)
-	//{
-	//	if(conditions == NULL)
-	//		break;
-	//	cout << conditions->aname << "  " << conditions->cmtype << "  " << conditions->value;
-	//	cout << endl;
-	//	
-	//	conditions = conditions->next;
-	//}
-	//
-/*
-	if(!Select(table, conditions))
-		return false;
-		*/
+	else
+	{
+		tab.disTableInf();
+		for (int i = results.size()-100; i < results.size(); i++)
+		{
+			TupleManager tuple(results.tableName(), results.getTupleIndexAt(i));
+			tuple.display();
+		}
+	}
+	cout << results.size() << " tuples in total!" << endl;
 	return true;
 }
 
 bool CallDelete()
-{/*
-	if(!TableExist(table.tname))
-	{
-		error_info ="Table is not existed!";
-		return false;
-	}*/
-	//ReadTable();
+{
 	if (!catalog.findTable(table.tname))
 	{
 		error_info = "Table is not existed!";
@@ -474,10 +499,10 @@ bool CallDelete()
 		table.a[k].aname = tab.getAttriName(k);
 		table.a[k].dtype = tab.getAttributeType(k);
 	}
-
+	table.anum = tab.attributeCount();
 	ConditionList temp = new Condition;
 	temp = conditions;
-	while(temp!=NULL) {
+		while(temp!=NULL) {
 	    int flag;
 	    flag = 0;
 		for(int i=0; i<table.anum; i++){
@@ -485,38 +510,59 @@ bool CallDelete()
 					flag = 1;
 					if(table.a[i].dtype == 0){
 			            int flag1;
-		 	            for(int j=0; j<temp->value.length(); j++){
+			            string inum ;
+			            if(temp->value.find('-') != -1){
+            	             if(temp->value.find('-') != 0){
+            		         error_info = "Value is illegal !";
+				             return false;	
+	                         }
+                             int a1 = temp->value.find('-');
+                             string inum1 = temp->value.substr(0, a1);
+                             string inum2 = temp->value.substr(a1+1,temp->value.length()-a1-1 );
+                             inum = inum1+inum2;
+                             }
+                        else inum = temp->value;
+		 	            for(int j=0; j<inum.length(); j++){
              	            flag1=0;
                             for(int k=0;k<=9;k++){
-			    	              if((int)(temp->value.at(j)) == k + '0'){ 
+			    	              if((int)(inum.at(j)) == k + '0'){ 
 					                  flag1=1;
 					                  break;
     			                  }
 			                 }
 			                if(flag1==0){
-				                 error_info = "Value is illegal!";
+				                 error_info = "Value is illegal !";
 				                 return false;
   			                 }
     			    
 			            }
-		              cout<<"value:"<<temp->value<<endl;
 		              temp->dtype = 0;
 		            }
-		            string num;
+		            string num,fnum;
 	                if(table.a[i].dtype == 1){
                          int flag1;
-                          if(temp->value.find('.') != -1){
-                              int t1 = temp->value.find('.');
-                              string num1 = temp->value.substr(0, t1);
-                              string num2 = temp->value.substr(t1+1,temp->value.length()-t1-1 );
-                              num = num1+num2;
-                              cout<<"num:"<<num<<endl;
+						 if (temp->value.find('-') != -1){
+							 if (temp->value.find('-') != 0){
+            		               error_info = "Value is illegal !";
+				                   return false;	
+	                          }
+							 int t1 = temp->value.find('-');
+							 string num1 = temp->value.substr(0, t1);
+							 string num2 = temp->value.substr(t1 + 1, temp->value.length() - t1 - 1);
+                         num = num1+num2;
                          }
-                         else num = temp->value ;
-                         for(int j=0; j<num.length(); j++){
+                         else num = temp->dtype ;
+                         if(num.find('.') != -1){
+                         int t2 = num.find('.');
+                         string num3 = num.substr(0, t2);
+                         string num4 = num.substr(t2+1,num.length()-t2-1 );
+                         fnum = num3 + num4;
+                        }
+                         else fnum = num ;
+                         for(int j=0; j<fnum.length(); j++){
              	              flag1 = 0;
 			                  for(int k=0;k<=9;k++){
-			    	               if((int)(num.at(j)) == k + '0'){ 
+			    	               if((int)(fnum.at(j)) == k + '0'){ 
 	                                    flag1=1;
 					                    break;
     			                   }
@@ -526,13 +572,12 @@ bool CallDelete()
 				                   return false;
     			              }
 			             }
-			             cout<<"value:"<<temp->value<<endl;
 			             temp->dtype = 1;
 		           }
 		
 		           if(table.a[i].dtype == 2){
  	                    if(temp->value.find('\'') != 0){
-		                      error_info="Value's format is wrong , lack ' !";
+		                      error_info="Value's format is  wrong, lack ' !";
 	                          return false;
                         }
                         if(temp->value.rfind('\'') != (temp->value.length()-1)){
@@ -540,19 +585,18 @@ bool CallDelete()
 		                      return false;
 			            }
                         temp->value= temp->value.substr(1,temp->value.length()-2);
-			            cout<<"value:"<<temp->value<<endl;	
 			            temp->dtype = 2;
-		            }
+	               }
 		     }		
 				
 		}
 		if(flag == 0){
-			error_info = "Attribute is not existed!";
+			error_info = "Attribute not exists!";
 			return false;
 		}
 		temp = temp->next;			
 	}
-
+	
 	int cnt = 0;
 	TupleResults results(tab.strName());
 	if (conditions==NULL)
@@ -595,10 +639,7 @@ bool CallDelete()
 		TupleManager tuple(results.tableName(), results.getTupleIndexAt(i));
 		tuple.Delete();
 	}
-	/*if(!Delete(table, conditions))
-		return false;
-	*/
-	cout << "Complete delete " << results.size() << " tuples!" << endl;
+	cout << "Completely delete " << results.size() << " tuples!" << endl;
 	return true;
 }
 
